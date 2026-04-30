@@ -1,0 +1,35 @@
+[
+  {
+    "id": "agent_loan_recovery",
+    "workspaceId": "ws_volt",
+    "name": "Loan Recovery Agent",
+    "voice": "Kavya",
+    "language": "hi-IN",
+    "description": "Handles overdue EMIs and collections conversations. Negotiates payment commitments, offers restructuring, escalates hardship cases.",
+    "status": "active",
+    "model": "gpt-4o-realtime",
+    "createdAt": "2026-01-22T10:00:00.000Z"
+  },
+  {
+    "id": "agent_emi_reminder",
+    "workspaceId": "ws_volt",
+    "name": "EMI Reminder Agent",
+    "voice": "Arjun",
+    "language": "hi-IN",
+    "description": "Pre-due-date reminders, confirms EMI amount and date, captures payment intent.",
+    "status": "active",
+    "model": "gpt-4o-realtime",
+    "createdAt": "2026-01-25T14:15:00.000Z"
+  },
+  {
+    "id": "agent_application_status",
+    "workspaceId": "ws_volt",
+    "name": "Application Status Agent",
+    "voice": "Meera",
+    "language": "en-IN",
+    "description": "Outbound updates for in-flight loan applications. KYC nudges, document requests, approval/decline conveys.",
+    "status": "active",
+    "model": "gpt-4o-realtime",
+    "createdAt": "2026-02-08T11:00:00.000Z"
+  }
+]

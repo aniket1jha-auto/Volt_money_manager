@@ -1,0 +1,179 @@
+@import "tailwindcss";
+
+/*
+ * Volt Voice — design tokens
+ * Inherited from Pi-commerce. Same Paytm-style navy + bright blue palette.
+ * --brand-* = deep navy (primary CTAs, active nav, page titles)
+ * --blue-*  = bright Paytm blue (links, focus rings, accents)
+ */
+@theme {
+  /* Brand — deep navy */
+  --color-brand-50:  #EEF2FB;
+  --color-brand-100: #D5DEF3;
+  --color-brand-200: #A9BBE6;
+  --color-brand-300: #7C97D9;
+  --color-brand-400: #4F73CC;
+  --color-brand-500: #1F4FBF;
+  --color-brand-600: #173E99;
+  --color-brand-700: #102D72;
+  --color-brand-800: #0A1F4F;
+  --color-brand-900: #002970;
+
+  /* Blue — bright Paytm accent */
+  --color-blue-50:  #E5F8FE;
+  --color-blue-100: #BFEEFC;
+  --color-blue-200: #80DCF8;
+  --color-blue-300: #40CAF5;
+  --color-blue-400: #1AC2F3;
+  --color-blue-500: #00BAF2;
+  --color-blue-600: #0095C2;
+  --color-blue-700: #006F91;
+
+  /* Cool slate neutrals */
+  --color-slate-25:  #FAFBFD;
+  --color-slate-50:  #F5F7FA;
+  --color-slate-100: #ECEFF4;
+  --color-slate-200: #DCE2EB;
+  --color-slate-300: #C0C9D6;
+  --color-slate-400: #8E99AE;
+  --color-slate-500: #6B7587;
+  --color-slate-600: #4A5468;
+  --color-slate-700: #303B50;
+  --color-slate-800: #1F2737;
+  --color-slate-900: #0F1626;
+
+  /* Semantic */
+  --color-success-50:  #E8F8EE;
+  --color-success-500: #27AE60;
+  --color-success-700: #1A7A43;
+  --color-warning-50:  #FEF4E8;
+  --color-warning-500: #F2994A;
+  --color-warning-700: #B36A23;
+  --color-danger-50:   #FDECEC;
+  --color-danger-500:  #EB5757;
+  --color-danger-700:  #B53636;
+
+  /* Surfaces */
+  --color-bg:           #F7F9FC;
+  --color-bg-subtle:    #F1F4F9;
+  --color-surface:      #FFFFFF;
+  --color-surface-alt:  #FAFBFD;
+
+  /* Text */
+  --color-text-primary:   #0F1626;
+  --color-text-secondary: #303B50;
+  --color-text-tertiary:  #6B7587;
+  --color-text-disabled:  #8E99AE;
+  --color-text-inverse:   #FFFFFF;
+
+  /* Borders */
+  --color-border-subtle: #ECEFF4;
+  --color-border-medium: #DCE2EB;
+  --color-border-strong: #C0C9D6;
+
+  /* Charts (rotation order) */
+  --color-chart-1: #1F4FBF;
+  --color-chart-2: #00BAF2;
+  --color-chart-3: #27AE60;
+  --color-chart-4: #F2994A;
+  --color-chart-5: #7C3AED;
+  --color-chart-6: #EB5757;
+
+  /* Typography */
+  --font-sans:   'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-serif:  'Instrument Serif', ui-serif, Georgia, serif;
+  --font-mono:   'JetBrains Mono', ui-monospace, monospace;
+
+  /* Type scale */
+  --text-xs:   0.75rem;
+  --text-sm:   0.875rem;
+  --text-base: 1rem;
+  --text-lg:   1.125rem;
+  --text-xl:   1.25rem;
+  --text-2xl:  1.5rem;
+  --text-3xl:  1.875rem;
+  --text-4xl:  2.25rem;
+  --text-5xl:  3rem;
+
+  /* Radii */
+  --radius-sm:   4px;
+  --radius-md:   8px;
+  --radius-lg:   12px;
+  --radius-xl:   16px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm:    0 1px 2px rgba(15, 22, 38, 0.05);
+  --shadow-md:    0 4px 6px -1px rgba(15, 22, 38, 0.07), 0 2px 4px -2px rgba(15, 22, 38, 0.05);
+  --shadow-lg:    0 10px 15px -3px rgba(15, 22, 38, 0.08), 0 4px 6px -4px rgba(15, 22, 38, 0.04);
+  --shadow-xl:    0 20px 25px -5px rgba(15, 22, 38, 0.10), 0 8px 10px -6px rgba(15, 22, 38, 0.04);
+  --shadow-card:  0 1px 3px rgba(15, 22, 38, 0.06), 0 1px 2px rgba(15, 22, 38, 0.04);
+  --shadow-glow:  0 0 0 4px rgba(0, 186, 242, 0.15);
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'cv11', 'ss01', 'ss03';
+}
+
+/* Tabular numerics for numeric columns */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* π logo gradient — navy → bright blue, only on the mark */
+.pi-mark {
+  background: linear-gradient(135deg, var(--color-brand-500) 0%, var(--color-blue-500) 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.pi-mark-bg {
+  background: linear-gradient(135deg, var(--color-brand-500) 0%, var(--color-blue-500) 100%);
+  color: white;
+}
+
+/* Subtle hover glow on logo */
+.pi-mark-bg:hover {
+  box-shadow: 0 0 24px rgba(0, 186, 242, 0.35);
+}
+
+/* Logo intro animation — runs once per session */
+@keyframes pi-intro {
+  0%   { transform: scale(0.6) rotate(-8deg); opacity: 0; }
+  60%  { transform: scale(1.08) rotate(2deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+.pi-intro {
+  animation: pi-intro 600ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* Breathing — global loading state */
+@keyframes pi-breathe {
+  0%, 100% { transform: scale(1);    opacity: 1;   }
+  50%      { transform: scale(1.06); opacity: 0.8; }
+}
+.pi-breathe {
+  animation: pi-breathe 1.6s ease-in-out infinite;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-slate-300); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-slate-400); }
+
+/* Focus ring */
+:focus-visible {
+  outline: 2px solid var(--color-blue-500);
+  outline-offset: 2px;
+}

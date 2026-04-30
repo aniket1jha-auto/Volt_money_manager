@@ -1,0 +1,11 @@
+[
+  {
+    "id": "user_001",
+    "email": "admin@voltmoney.in",
+    "name": "Priya Sharma",
+    "role": "admin",
+    "workspaces": [
+      "ws_volt"
+    ]
+  }
+]
