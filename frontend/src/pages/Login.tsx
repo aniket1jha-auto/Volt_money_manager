@@ -42,22 +42,12 @@ export default function Login() {
               'radial-gradient(ellipse at top left, rgba(0, 186, 242, 0.4), transparent 60%), radial-gradient(ellipse at bottom right, rgba(31, 79, 191, 0.5), transparent 50%)',
           }}
         />
-        <div className="relative flex flex-col justify-between p-12 w-full">
-          <Logo size="lg" wordmarkColor="light" intro />
+        <div className="relative flex flex-col items-center justify-center p-12 w-full">
+          <Logo size="hero" withWordmark={false} intro />
+        </div>
 
-          <div className="max-w-md">
-            <h1 className="font-serif italic text-5xl leading-tight mb-4">
-              Voice campaigns,<br /> built for lending.
-            </h1>
-            <p className="text-white/70 text-base leading-relaxed">
-              Upload a contact list. Choose an agent. Watch every conversation,
-              every intent, every outcome.
-            </p>
-          </div>
-
-          <div className="text-xs text-white/40 tabular">
-            Volt Voice · v0.1 · Internal preview
-          </div>
+        <div className="absolute bottom-6 left-12 text-xs text-white/40 tabular">
+          Volt Voice · v0.1 · Internal preview
         </div>
       </div>
 

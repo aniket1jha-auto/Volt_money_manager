@@ -1,11 +1,9 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
-  LayoutDashboard,
   Megaphone,
   BarChart3,
   Bot,
-  Settings2,
   Building2,
   ChevronDown,
   ChevronUp,
@@ -25,14 +23,9 @@ interface NavItem {
 }
 
 const primaryNav: NavItem[] = [
-  { to: '/', icon: LayoutDashboard, label: 'Dashboard', end: true },
   { to: '/campaigns', icon: Megaphone, label: 'Campaigns' },
   { to: '/analytics/campaigns', icon: BarChart3, label: 'Campaign Analytics' },
   { to: '/analytics/agents', icon: Bot, label: 'Agent Analytics' },
-];
-
-const settingsNav: NavItem[] = [
-  { to: '/settings', icon: Settings2, label: 'Settings' },
 ];
 
 function SidebarLink({ item }: { item: NavItem }) {
@@ -175,17 +168,11 @@ export function Sidebar() {
   return (
     <aside className="fixed left-0 top-0 bottom-0 z-40 w-60 flex flex-col bg-brand-900 text-white">
       <div className="px-5 h-16 flex items-center shrink-0 border-b border-white/10">
-        <Logo size="md" wordmarkColor="light" intro />
+        <Logo size="md" withWordmark={false} intro />
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-4 flex flex-col gap-0.5">
         {primaryNav.map((item) => (
-          <SidebarLink key={item.to} item={item} />
-        ))}
-
-        <div className="my-3 border-t border-white/10" />
-
-        {settingsNav.map((item) => (
           <SidebarLink key={item.to} item={item} />
         ))}
       </nav>
