@@ -7,7 +7,6 @@ import {
   FileText,
   RefreshCw,
   Calendar,
-  ShieldCheck,
 } from 'lucide-react';
 import type { VoiceAgent, ContactList, CampaignSchedule } from '@/types';
 import { getVoiceAgents, createCampaign } from '@/lib/api';
@@ -20,7 +19,6 @@ import { Input, Label, HelperText } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
 import { Select } from '@/components/ui/Select';
 import { Radio } from '@/components/ui/Radio';
-import { Checkbox } from '@/components/ui/Checkbox';
 import { FileDropzone } from '@/components/ui/FileDropzone';
 import { Modal } from '@/components/ui/Modal';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -30,7 +28,7 @@ import {
   validateCsv,
   type CsvValidation,
 } from '@/lib/csv';
-import { formatNumber, formatMoney, formatDateTime } from '@/lib/format';
+import { formatNumber, formatDateTime } from '@/lib/format';
 import { cn } from '@/lib/cn';
 
 type ScheduleType = 'immediate' | 'scheduled';
@@ -48,8 +46,6 @@ const VAR_OPTIONS = [
   { value: 'custom_var_4',     label: 'Custom variable 4' },
   { value: 'custom_var_5',     label: 'Custom variable 5' },
 ];
-
-const COST_PER_CALL = 2.4;
 
 interface CsvState {
   fileName: string;
@@ -80,9 +76,6 @@ export default function CreateCampaign() {
   // Section 3
   const [scheduleType, setScheduleType] = useState<ScheduleType>('immediate');
   const [startsAt, setStartsAt] = useState('');
-
-  // Section 4
-  const [compliance, setCompliance] = useState(false);
 
   // Confirmation
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -173,9 +166,8 @@ export default function CreateCampaign() {
     if (phoneColIndex == null) return false;
     if (!validation || validation.validRows === 0) return false;
     if (scheduleType === 'scheduled' && !startsAt) return false;
-    if (!compliance) return false;
     return true;
-  }, [name, voiceAgentId, csv, phoneColIndex, validation, scheduleType, startsAt, compliance]);
+  }, [name, voiceAgentId, csv, phoneColIndex, validation, scheduleType, startsAt]);
 
   const canSaveDraft = useMemo(() => name.trim().length > 0, [name]);
 
@@ -237,7 +229,6 @@ export default function CreateCampaign() {
   if (!activeWorkspace) return null;
 
   const validCount = validation?.validRows ?? 0;
-  const estimatedCost = validCount * COST_PER_CALL;
   const selectedAgent = agents?.find((a) => a.id === voiceAgentId) ?? null;
 
   return (
@@ -388,46 +379,6 @@ export default function CreateCampaign() {
           </div>
         </Section>
 
-        {/* 7.4 COMPLIANCE */}
-        <Section title="Compliance" icon={<ShieldCheck size={18} />}>
-          <div className="rounded-md border border-border-subtle bg-slate-25 p-4">
-            <Checkbox
-              id="compliance"
-              checked={compliance}
-              onChange={(e) => setCompliance(e.target.checked)}
-              label={
-                <span className="font-medium">
-                  I confirm these numbers are DND-compliant and have valid opt-in consent for outbound calls.
-                </span>
-              }
-              helper="We do not validate DND status. The customer is responsible for compliance."
-            />
-          </div>
-        </Section>
-
-        {/* 7.5 COST PREVIEW */}
-        <Section title="Cost preview">
-          <Card className="bg-brand-50/40 border-brand-100" padding="md">
-            <div className="flex items-baseline gap-2 flex-wrap">
-              <span className="text-2xl font-semibold text-text-primary tabular">
-                {formatNumber(validCount, activeWorkspace)}
-              </span>
-              <span className="text-sm text-text-tertiary">valid contacts ×</span>
-              <span className="text-2xl font-semibold text-text-primary tabular">
-                {formatMoney(COST_PER_CALL, activeWorkspace)}
-              </span>
-              <span className="text-sm text-text-tertiary">per call =</span>
-              <span className="text-2xl font-semibold text-brand-700 tabular">
-                {formatMoney(estimatedCost, activeWorkspace)}
-              </span>
-              <span className="text-sm text-text-tertiary">estimated total</span>
-            </div>
-            <p className="text-xs text-text-tertiary mt-2">
-              Includes telephony + agent + platform fees.
-            </p>
-          </Card>
-        </Section>
-
         {/* FOOTER */}
         <div className="flex items-center justify-end gap-2 pt-4 border-t border-border-subtle">
           <Button
@@ -471,10 +422,6 @@ export default function CreateCampaign() {
           <SummaryRow term="Name"             definition={name} />
           <SummaryRow term="Agent"            definition={selectedAgent?.name ?? '—'} />
           <SummaryRow term="Contacts"         definition={`${formatNumber(validCount, activeWorkspace)} valid`} />
-          <SummaryRow
-            term="Estimated cost"
-            definition={formatMoney(estimatedCost, activeWorkspace)}
-          />
           <SummaryRow
             term="Starts"
             definition={
