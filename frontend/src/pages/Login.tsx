@@ -34,19 +34,67 @@ export default function Login() {
   return (
     <div className="min-h-screen grid lg:grid-cols-2 bg-bg">
       {/* Left — brand panel */}
-      <div className="hidden lg:flex relative overflow-hidden bg-brand-900 text-white">
+      <div className="hidden lg:flex relative overflow-hidden border-r border-border-subtle">
+        {/* Soft diagonal base gradient */}
         <div
-          className="absolute inset-0 opacity-30"
+          className="absolute inset-0"
           style={{
             background:
-              'radial-gradient(ellipse at top left, rgba(0, 186, 242, 0.4), transparent 60%), radial-gradient(ellipse at bottom right, rgba(31, 79, 191, 0.5), transparent 50%)',
+              'linear-gradient(135deg, #EFF8FE 0%, #F8FAFD 45%, #ECF0FA 100%)',
           }}
         />
+
+        {/* Atmospheric color orbs — cyan top-left, navy bottom-right */}
+        <div
+          className="absolute -top-32 -left-24 h-[28rem] w-[28rem] rounded-full blur-3xl opacity-70"
+          style={{
+            background:
+              'radial-gradient(circle at center, rgba(0, 186, 242, 0.45) 0%, transparent 70%)',
+          }}
+        />
+        <div
+          className="absolute -bottom-32 -right-24 h-[32rem] w-[32rem] rounded-full blur-3xl opacity-60"
+          style={{
+            background:
+              'radial-gradient(circle at center, rgba(31, 79, 191, 0.35) 0%, transparent 70%)',
+          }}
+        />
+        <div
+          className="absolute top-1/2 left-1/3 h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl opacity-30"
+          style={{
+            background:
+              'radial-gradient(circle at center, rgba(0, 41, 112, 0.25) 0%, transparent 70%)',
+          }}
+        />
+
+        {/* Subtle dot grid for texture */}
+        <div
+          className="absolute inset-0 opacity-[0.05]"
+          style={{
+            backgroundImage:
+              'radial-gradient(circle, #002970 1px, transparent 1px)',
+            backgroundSize: '22px 22px',
+          }}
+        />
+
+        {/* Centerpiece — logo with halo */}
         <div className="relative flex flex-col items-center justify-center p-12 w-full">
-          <Logo size="hero" withWordmark={false} intro />
+          <div className="relative">
+            <div
+              className="absolute -inset-12 rounded-full blur-3xl"
+              style={{
+                background:
+                  'radial-gradient(circle at center, rgba(0, 186, 242, 0.30) 0%, transparent 70%)',
+              }}
+              aria-hidden
+            />
+            <div className="relative">
+              <Logo size="hero" withWordmark={false} intro />
+            </div>
+          </div>
         </div>
 
-        <div className="absolute bottom-6 left-12 text-xs text-white/40 tabular">
+        <div className="absolute bottom-6 left-12 text-xs text-text-tertiary tabular">
           Volt Voice · v0.1 · Internal preview
         </div>
       </div>
