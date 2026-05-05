@@ -168,7 +168,7 @@ export function Sidebar() {
   return (
     <aside className="fixed left-0 top-0 bottom-0 z-40 w-60 flex flex-col bg-brand-900 text-white">
       <div className="px-5 h-16 flex items-center shrink-0 border-b border-white/10">
-        <Logo size="md" withWordmark={false} intro />
+        <Logo size="md" wordmarkColor="light" intro />
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-4 flex flex-col gap-0.5">
