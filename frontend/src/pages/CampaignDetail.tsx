@@ -1,36 +1,42 @@
 import { useEffect, useState } from 'react';
 import { Navigate, useParams } from 'react-router-dom';
-import type { Campaign, VoiceAgent } from '@/types';
-import { getCampaign, getVoiceAgents } from '@/lib/api';
+import { Pause, Play, Rocket } from 'lucide-react';
+import type { Campaign } from '@/types';
+import { getCampaign, setCampaignStatus } from '@/lib/api';
 import { useWorkspace } from '@/hooks/useWorkspace';
-import CampaignAnalytics from './CampaignAnalytics';
+import { useToast } from '@/components/ui/Toast';
+import Analytics from './Analytics';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { Button } from '@/components/ui/Button';
+import { NewRunDrawer } from '@/components/features/NewRunDrawer';
 
 /*
- * Campaign Detail = Campaign Analytics page filtered to a single campaign.
- * The brief explicitly defines it this way (§4 routing: /campaigns/:id).
- * We render CampaignAnalytics with fixedCampaignId — the campaign filter
- * dropdown is hidden and the comparison table is suppressed.
+ * Campaign Detail = the unified Analytics view filtered to a single
+ * campaign, plus a "New run" action in the page header that opens the
+ * upload drawer. Performance metrics, conversation insights, and the
+ * calls table all live on the same page (under one filter bar) — the
+ * operator sees everything that happened in this campaign without
+ * page-hopping.
  */
 export default function CampaignDetail() {
   const { id } = useParams<{ id: string }>();
   const { activeWorkspace } = useWorkspace();
-  const [campaign, setCampaign] = useState<Campaign | null | undefined>(undefined); // undefined = loading
-  const [agent, setAgent] = useState<VoiceAgent | null>(null);
+  const toast = useToast();
+  const [campaign, setCampaign] = useState<Campaign | null | undefined>(undefined);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [statusBusy, setStatusBusy] = useState(false);
+  // Bumped after a successful run-start to force the analytics page to refetch.
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     if (!activeWorkspace || !id) return;
     let cancelled = false;
-    getCampaign(activeWorkspace.id, id).then(async (c) => {
+    getCampaign(activeWorkspace.id, id).then((c) => {
       if (cancelled) return;
       setCampaign(c);
-      if (!c) return;
-      const agents = await getVoiceAgents(activeWorkspace.id);
-      if (cancelled) return;
-      setAgent(agents.find((a) => a.id === c.voiceAgentId) ?? null);
     });
     return () => { cancelled = true; };
-  }, [activeWorkspace, id]);
+  }, [activeWorkspace, id, refreshKey]);
 
   if (!id) return <Navigate to="/campaigns" replace />;
   if (campaign === undefined) {
@@ -43,16 +49,62 @@ export default function CampaignDetail() {
     );
   }
   if (campaign === null) return <Navigate to="/campaigns" replace />;
+  if (!activeWorkspace) return null;
 
-  const subtitle = agent
-    ? `${agent.name} · ${campaign.metrics.baseUploaded.toLocaleString('en-IN')} contacts`
-    : `${campaign.metrics.baseUploaded.toLocaleString('en-IN')} contacts`;
+  async function toggleStatus() {
+    if (!activeWorkspace || !campaign) return;
+    const next = campaign.status === 'active' ? 'inactive' : 'active';
+    setStatusBusy(true);
+    try {
+      const updated = await setCampaignStatus(activeWorkspace.id, campaign.id, next);
+      setCampaign(updated);
+      toast.success(
+        next === 'inactive' ? 'Campaign paused' : 'Campaign activated',
+        next === 'inactive'
+          ? `'${updated.name}' will not place new calls until reactivated.`
+          : `'${updated.name}' is live again.`,
+      );
+    } finally {
+      setStatusBusy(false);
+    }
+  }
+
+  const headerActions = (
+    <>
+      <Button
+        variant="secondary"
+        leftIcon={campaign.status === 'active' ? <Pause size={16} /> : <Play size={16} />}
+        onClick={toggleStatus}
+        disabled={statusBusy}
+      >
+        {campaign.status === 'active' ? 'Mark inactive' : 'Mark active'}
+      </Button>
+      <Button leftIcon={<Rocket size={16} />} onClick={() => setDrawerOpen(true)}>
+        New run
+      </Button>
+    </>
+  );
 
   return (
-    <CampaignAnalytics
-      fixedCampaignId={campaign.id}
-      headerTitle={campaign.name}
-      headerSubtitle={subtitle}
-    />
+    <>
+      <Analytics
+        fixedCampaignId={campaign.id}
+        headerTitle={campaign.name}
+        headerSubtitle=""
+        headerActions={headerActions}
+        refreshKey={refreshKey}
+      />
+
+      <NewRunDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        campaign={campaign}
+        workspace={activeWorkspace}
+        onStarted={(updated) => {
+          setCampaign(updated);
+          setRefreshKey((k) => k + 1);
+        }}
+      />
+    </>
   );
 }

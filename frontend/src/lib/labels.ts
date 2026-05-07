@@ -5,22 +5,27 @@
  */
 import type { FailureReason } from '@/types';
 
+/*
+ * Intent vocabulary — these are post-call outcomes the AI tags onto a
+ * call once it ends. Each value names what HAPPENED on the call rather
+ * than what the customer asked about.
+ */
 export const INTENT_LABEL: Record<string, string> = {
-  loan_inquiry: 'Loan inquiry',
-  emi_status: 'EMI status',
-  repayment_intent: 'Repayment intent',
-  payment_promise: 'Payment promise',
-  kyc_pending: 'KYC pending',
-  application_status: 'Application status',
-  callback_request: 'Callback request',
-  document_request: 'Document request',
-  balance_inquiry: 'Balance inquiry',
-  renewal_inquiry: 'Renewal inquiry',
-  complaint: 'Complaint',
-  dispute_charge: 'Charge dispute',
-  financial_hardship: 'Financial hardship',
-  wrong_number: 'Wrong number',
-  agent_handoff_request: 'Agent handoff',
+  kyc_completed_on_call:    'KYC completed on call',
+  application_submitted:    'Application submitted',
+  interested_will_apply:    'Interested, will apply later',
+  call_me_later:            'Call me later',
+  not_interested:           'Not interested',
+  payment_promised:         'Payment promised',
+  payment_already_done:     'Payment already done',
+  documents_requested:      'Documents requested',
+  complaint_raised:         'Complaint raised',
+  not_eligible:             'Not eligible',
+  requesting_branch_visit:  'Wants to visit branch',
+  wrong_number:             'Wrong number',
+  dnd_requested:            'DND requested',
+  transferred_to_human:     'Transferred to human',
+  customer_unavailable:     'Customer unavailable',
 };
 
 export const FAILURE_REASON_LABEL: Record<FailureReason, string> = {

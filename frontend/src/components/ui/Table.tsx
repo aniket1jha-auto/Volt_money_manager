@@ -62,7 +62,7 @@ export function Table<T>({
   } as const;
 
   return (
-    <div className={cn('rounded-md border border-border-subtle overflow-hidden bg-surface', className)}>
+    <div className={cn('rounded-xl border border-border-subtle overflow-hidden bg-surface shadow-card', className)}>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead className={cn('bg-slate-25 border-b border-border-subtle text-xs', stickyHeader && 'sticky top-0 z-10')}>
@@ -76,7 +76,7 @@ export function Table<T>({
                   <th
                     key={col.key}
                     className={cn(
-                      'px-3 py-2.5 font-semibold text-text-tertiary uppercase tracking-wide',
+                      'px-3 py-3 font-semibold text-text-tertiary uppercase tracking-[0.06em]',
                       alignCls[col.align ?? 'left'],
                       col.className,
                     )}
@@ -110,20 +110,23 @@ export function Table<T>({
                 </td>
               </tr>
             ) : (
-              sortedRows.map((row) => (
+              sortedRows.map((row, idx) => (
                 <tr
                   key={rowKey(row)}
                   onClick={onRowClick ? () => onRowClick(row) : undefined}
                   className={cn(
-                    'border-b border-border-subtle last:border-b-0',
-                    onRowClick && 'cursor-pointer hover:bg-slate-25 transition-colors',
+                    'group border-b border-border-subtle last:border-b-0',
+                    // Zebra striping — every other row picks up a slightly
+                    // tinted background so dense tables read easier.
+                    idx % 2 === 1 && 'bg-slate-25/60',
+                    onRowClick && 'cursor-pointer transition-colors hover:bg-blue-50/60 hover:shadow-[inset_3px_0_0_var(--color-brand-500)]',
                   )}
                 >
                   {columns.map((col) => (
                     <td
                       key={col.key}
                       className={cn(
-                        'px-3 py-2.5 text-text-primary',
+                        'px-3 py-3 text-text-primary',
                         alignCls[col.align ?? 'left'],
                         col.className,
                       )}

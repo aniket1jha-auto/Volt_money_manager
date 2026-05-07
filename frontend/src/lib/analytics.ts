@@ -8,7 +8,6 @@
  */
 import type {
   CallSummary,
-  Campaign,
   FailureReason,
 } from '@/types';
 
@@ -138,27 +137,6 @@ export function failureBreakdown(calls: CallSummary[]): {
     };
   });
   return { total, items };
-}
-
-export interface CampaignRow {
-  campaign: Campaign;
-  metrics: AggregateMetrics;
-}
-
-export function perCampaignRows(
-  calls: CallSummary[],
-  campaigns: Campaign[],
-): CampaignRow[] {
-  const byId = new Map<string, CallSummary[]>();
-  for (const c of calls) {
-    const arr = byId.get(c.campaignId);
-    if (arr) arr.push(c);
-    else byId.set(c.campaignId, [c]);
-  }
-  return campaigns.map((camp) => ({
-    campaign: camp,
-    metrics: aggregate(byId.get(camp.id) ?? []),
-  }));
 }
 
 function toDateKey(d: Date): string {

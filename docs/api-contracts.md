@@ -166,10 +166,12 @@ based on the request.
 ```ts
 {
   name: string;
-  description?: string;
   voiceAgentId: string;
   contactList: ContactList;
   schedule: { type: 'immediate' | 'scheduled'; startsAt?: string; timezone: string };
+  retryPolicy?: RetryPolicy;          // omit → backend uses DEFAULT_RETRY_POLICY
+  goal?: { description: string; targetIntent: string };  // optional
+  feedbackIntents?: string[];                              // optional
   mode: 'draft' | 'launch';
 }
 ```
@@ -215,6 +217,98 @@ mapping panel.
 > derived `ContactList` inline with `POST /campaigns`. Backend can keep
 > this two-step flow if it prefers server-side parsing — the UI swap is
 > small.
+
+---
+
+### `POST /campaigns/:id/runs`
+Queue a new run on an existing campaign — the operator typically uses
+this to re-execute the same campaign against a fresh audience. The run
+either starts immediately or is scheduled; analytics across all runs
+roll up under the parent campaign.
+
+**Headers**: `X-Workspace-Id`
+
+**Request body**
+```ts
+{
+  contactList: ContactList;   // shape: see data-shapes.md
+  schedule: {
+    type: 'immediate' | 'scheduled';
+    startsAt?: string;        // required when type === 'scheduled'
+    timezone: string;         // workspace timezone, denormalized
+  };
+  retryPolicy: RetryPolicy;   // shape: see data-shapes.md + retry table below
+}
+```
+
+**Response 201**
+```ts
+{
+  campaign: Campaign;         // updated campaign — metrics.baseUploaded grew
+  run: CampaignRun;           // the newly created run record
+}
+```
+
+**Behavior**
+- A new `CampaignRun` is appended to `campaign.runs[]`.
+- `campaign.contactList` is updated to point at the new run's list
+  (the "most recent cut" stays denormalized for list views).
+- `campaign.retryPolicy` is updated to the submitted policy (becomes
+  the new default for any subsequent run).
+- The `retryPolicy` is **snapshot** on the run record so the rules
+  active at the moment of execution are preserved even if the
+  campaign-level default later changes.
+- `campaign.metrics.baseUploaded` grows by `run.contactList.validRows`.
+- If the campaign was `completed` or `draft` and the new run is
+  immediate, status flips back to `active`.
+- Schedule semantics match the create flow: `immediate` → run starts
+  right away; `scheduled` → run waits until `startsAt`.
+
+**Errors** — `404 CAMPAIGN_NOT_FOUND`, `403 WORKSPACE_FORBIDDEN`,
+`400 INVALID_RUN`, `402 INSUFFICIENT_CREDIT`
+
+UI source: `startCampaignRun(workspaceId, campaignId, draft)` —
+triggered from the **New run** drawer on Campaign Detail.
+
+---
+
+### Retry policy → Plivo `hangup_cause` mapping
+
+The UI exposes simple categories. The backend resolves them to Plivo
+hangup-cause codes when deciding whether to re-queue a call. Source:
+[Plivo Hangup Causes](https://www.plivo.com/docs/voice/troubleshooting/hangup-causes).
+
+| Retry condition | Triggers retry on |
+| --- | --- |
+| `retryOn.shortAnswer` | Any code where the call was answered but `duration < shortAnswerThresholdSec`. Evaluated from the call record, not from a hangup cause alone. |
+| `retryOn.noAnswer` | `3000` (No Answer), `6010` (Ring Timeout Reached) |
+| `retryOn.busy` | `3010` (Busy Line), `3100` (Busy Everywhere), `3090` (Network congestion from carrier) |
+| `retryOn.carrierError` | `3070` (Request timeout), `3080` (Internal server error from carrier), `5000` (Network Error), `6020` (Media Timeout) |
+| `retryOn.voicemail` | `9100` (Machine Detected) |
+
+Cause codes that should **never** trigger a retry by policy (the UI
+does not surface these as toggles): `3020` Rejected, `3040` Forbidden,
+`3110` Declined, `3130` Spam block, `2000` Invalid destination, `2010`
+Out of service, `2030` Country barred, `2040` Number barred, `3050`
+Unallocated number, `3120` User doesn't exist, `4000` Normal Hangup.
+
+A retry attempt MUST respect:
+- `retryPolicy.maxAttempts` — total additional dials beyond the first
+- `retryPolicy.intervalMinutes` — minimum wait before the next dial
+- The campaign's overall workspace-level CPS / concurrency limits
+
+The frontend canonical mapping lives in
+[`frontend/src/lib/retryPolicy.ts`](../frontend/src/lib/retryPolicy.ts) —
+backend devs should mirror that file as the source of truth.
+
+---
+
+### `GET /campaigns/:id/runs`  *(optional)*
+List every run for a campaign. The UI today derives the list from
+`campaign.runs[]` returned with `GET /campaigns/:id`, plus the implicit
+"initial run" reconstructed from `campaign.contactList` and
+`campaign.startedAt`. A dedicated endpoint isn't required for v1 but
+backend may add it later if pagination is needed.
 
 ---
 
@@ -453,21 +547,23 @@ UI source: `intentDistribution()`, `sentimentDistribution()`,
 |  8 | GET  | `/campaigns` | List campaigns | `getCampaigns` |
 |  9 | GET  | `/campaigns/:id` | Fetch campaign | `getCampaign` |
 | 10 | POST | `/campaigns` | Create / launch / save draft | `createCampaign` |
-| 11 | POST | `/campaigns/:id/upload` | (optional) server-side CSV parse | — |
-| 12 | POST | `/campaigns/:id/launch` | Lifecycle (future) | — |
-| 13 | POST | `/campaigns/:id/pause` | Lifecycle (future) | — |
-| 14 | POST | `/campaigns/:id/resume` | Lifecycle (future) | — |
-| 15 | GET  | `/calls` | List calls | `getCalls` |
-| 16 | GET  | `/calls/:id` | Call summary | `getCallSummary` |
-| 17 | GET  | `/calls/:id/detail` | Transcript + insights | `getCallDetail` |
-| 18 | GET  | `/calls/:id/recording` | Audio stream | drawer audio player |
-| 19 | PATCH | `/calls/:id` | Flag / review / notes / tags | drawer footer |
-| 20 | POST | `/calls/export` | Bulk export (stubbed) | drawer / table bulk action |
-| 21 | GET  | `/dashboard/kpis` | Dashboard KPIs | `getDashboardKpis` |
-| 22 | GET  | `/dashboard/intents-today` | Top intents (today) | `getIntentsToday` |
-| 23 | GET  | `/dashboard/failures-today` | Top failure reasons (today) | `getFailureReasonsToday` |
-| 24 | GET  | `/analytics/campaigns/aggregate` | (optional) campaign rollup | `lib/analytics.ts` |
-| 25 | GET  | `/analytics/agents/aggregate` | (optional) agent rollup | `lib/analytics.ts` |
+| 11 | POST | `/campaigns/:id/runs` | Queue a new run (CSV + schedule + retry) | `startCampaignRun` |
+| 12 | GET  | `/campaigns/:id/runs` | (optional) list runs | — |
+| 13 | POST | `/campaigns/:id/upload` | (optional) server-side CSV parse | — |
+| 14 | POST | `/campaigns/:id/launch` | Lifecycle (future) | — |
+| 15 | POST | `/campaigns/:id/pause` | Lifecycle (future) | — |
+| 16 | POST | `/campaigns/:id/resume` | Lifecycle (future) | — |
+| 17 | GET  | `/calls` | List calls | `getCalls` |
+| 18 | GET  | `/calls/:id` | Call summary | `getCallSummary` |
+| 19 | GET  | `/calls/:id/detail` | Transcript + insights | `getCallDetail` |
+| 20 | GET  | `/calls/:id/recording` | Audio stream | drawer audio player |
+| 21 | PATCH | `/calls/:id` | Flag / review / notes / tags | drawer footer |
+| 22 | POST | `/calls/export` | Bulk export (stubbed) | drawer / table bulk action |
+| 23 | GET  | `/dashboard/kpis` | Dashboard KPIs | `getDashboardKpis` |
+| 24 | GET  | `/dashboard/intents-today` | Top intents (today) | `getIntentsToday` |
+| 25 | GET  | `/dashboard/failures-today` | Top failure reasons (today) | `getFailureReasonsToday` |
+| 26 | GET  | `/analytics/campaigns/aggregate` | (optional) campaign rollup | `lib/analytics.ts` |
+| 27 | GET  | `/analytics/agents/aggregate` | (optional) agent rollup | `lib/analytics.ts` |
 
-Endpoints 1–23 are required for v1. 11–14, 24–25 are listed for
+Endpoints 1–11, 17–25 are required for v1. 12–16, 26–27 are listed for
 backend planning and will be wired in later iterations.

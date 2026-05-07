@@ -23,11 +23,17 @@ import type {
   User,
   VoiceAgent,
   Campaign,
+  CampaignGoal,
+  CampaignRun,
   CampaignStatus,
+  RetryPolicy,
   CallSummary,
   CallDetail,
   FailureReason,
+  AudienceFile,
+  AudienceFileStatus,
 } from '@/types';
+import { DEFAULT_RETRY_POLICY } from '@/types';
 
 // ────────────────────────────────────────────────────────────────────
 // Latency + fault simulator.
@@ -187,26 +193,31 @@ export async function getCampaign(workspaceId: string, id: string): Promise<Camp
 /** Implies: POST /campaigns */
 export interface CampaignDraft {
   name: string;
-  description?: string;
   voiceAgentId: string;
   contactList: Campaign['contactList'];
   schedule: Campaign['schedule'];
+  retryPolicy?: RetryPolicy;
+  goal?: CampaignGoal;
+  feedbackIntents?: string[];
 }
 export async function createCampaign(
   workspaceId: string,
   draft: CampaignDraft,
-  asDraft = false,
 ): Promise<Campaign> {
   const id = `camp_${String(CAMPAIGNS.length + 1).padStart(3, '0')}`;
   const created: Campaign = {
     id,
     workspaceId,
     name: draft.name,
-    description: draft.description,
     voiceAgentId: draft.voiceAgentId,
-    status: asDraft ? 'draft' : draft.schedule.type === 'scheduled' ? 'scheduled' : 'active',
+    // Newly created campaigns are always active. Operator can flip to
+    // inactive from the campaign detail page once they want to stop.
+    status: 'active',
     contactList: draft.contactList,
     schedule: draft.schedule,
+    retryPolicy: draft.retryPolicy ?? DEFAULT_RETRY_POLICY,
+    goal: draft.goal,
+    feedbackIntents: draft.feedbackIntents,
     metrics: {
       baseUploaded: draft.contactList.validRows,
       callsInitiated: 0,
@@ -218,11 +229,67 @@ export async function createCampaign(
     },
     createdBy: 'user_001',
     createdAt: new Date().toISOString(),
-    startedAt: !asDraft && draft.schedule.type === 'immediate' ? new Date().toISOString() : undefined,
+    startedAt: draft.schedule.type === 'immediate' ? new Date().toISOString() : undefined,
   };
   // Ephemeral — appended to the runtime list. Reload re-reads JSON.
   CAMPAIGNS.unshift(created);
   return delay(created, 'slow');
+}
+
+/** Implies: POST /campaigns/:id/runs
+ *
+ * Start a new run on an existing campaign — typically triggered when
+ * the operator wants to dial a fresh contact list under the same
+ * campaign so analytics roll up together. The run lands on
+ * `campaign.runs[]`, and the campaign's `metrics.baseUploaded` grows
+ * by the run's `validRows`. The campaign's top-level `contactList` is
+ * updated to point at the most recent run's list so existing consumers
+ * (cards, list views) keep showing the latest cut. The submitted
+ * `retryPolicy` becomes the campaign's default for subsequent runs and
+ * is snapshot-saved on the run record.
+ */
+export interface RunDraft {
+  contactList: Campaign['contactList'];
+  schedule: Campaign['schedule'];
+  retryPolicy: RetryPolicy;
+}
+export async function startCampaignRun(
+  workspaceId: string,
+  campaignId: string,
+  draft: RunDraft,
+): Promise<{ campaign: Campaign; run: CampaignRun }> {
+  const camp = CAMPAIGNS.find((c) => c.workspaceId === workspaceId && c.id === campaignId);
+  if (!camp) {
+    return delay(
+      Promise.reject(new Error(`Campaign ${campaignId} not found`)) as never,
+      'fast',
+    );
+  }
+  const run: CampaignRun = {
+    id: `run_${Date.now().toString(36)}`,
+    campaignId,
+    contactList: draft.contactList,
+    schedule: draft.schedule,
+    retryPolicy: draft.retryPolicy,
+    startedBy: 'user_001',
+    startedAt: new Date().toISOString(),
+    status: draft.schedule.type === 'scheduled' ? 'queued' : 'running',
+  };
+  camp.runs = camp.runs ? [...camp.runs, run] : [run];
+  camp.contactList = draft.contactList;
+  camp.retryPolicy = draft.retryPolicy;
+  camp.metrics = {
+    ...camp.metrics,
+    baseUploaded: camp.metrics.baseUploaded + draft.contactList.validRows,
+  };
+  // Starting a fresh run on an inactive campaign automatically flips it
+  // back to active — calls are about to flow.
+  if (draft.schedule.type === 'immediate' && camp.status === 'inactive') {
+    camp.status = 'active';
+    if (!camp.startedAt) camp.startedAt = new Date().toISOString();
+    camp.completedAt = undefined;
+  }
+  return delay({ campaign: camp, run }, 'slow');
 }
 
 // ────────────────────────────────────────────────────────────────────
@@ -364,7 +431,7 @@ export async function getDashboardKpis(workspaceId: string): Promise<DashboardKp
 
   return delay({
     activeCampaigns: camps.filter((c) => c.status === 'active').length,
-    scheduledCampaigns: camps.filter((c) => c.status === 'scheduled').length,
+    scheduledCampaigns: camps.filter((c) => c.status === 'inactive').length,
     callsToday: today.length,
     callsYesterday: yesterday.length,
     connectedRate7d: rate(last7),
@@ -411,4 +478,174 @@ export async function getFailureReasonsToday(
       .sort((a, b) => b.count - a.count)
       .slice(0, 3),
   );
+}
+
+// ────────────────────────────────────────────────────────────────────
+// Audience files
+// ────────────────────────────────────────────────────────────────────
+
+/** Synthetic "fresh upload, awaiting validation" rows. These are not
+ *  tied to a real campaign — just demonstrate the pending state on the
+ *  Audience List page. They sit at the top of the list. */
+const PENDING_AUDIENCE_FILES_BASE = [
+  {
+    fileName: 'kyc_pending_q2_sweep_v3.csv',
+    totalRows: 1240,
+    sizeBytes: 187_300,
+    daysAgo: 0,
+    hours: 0,
+  },
+  {
+    fileName: 'top_up_offers_may_2026.csv',
+    totalRows: 2104,
+    sizeBytes: 314_800,
+    daysAgo: 0,
+    hours: 1,
+  },
+  {
+    fileName: 'application_followup_batch_07.csv',
+    totalRows: 580,
+    sizeBytes: 84_600,
+    daysAgo: 0,
+    hours: 3,
+  },
+  {
+    fileName: 'recovery_30dpd_freshlist.csv',
+    totalRows: 412,
+    sizeBytes: 61_900,
+    daysAgo: 1,
+    hours: 0,
+  },
+];
+
+const FAILED_AUDIENCE_FILE_BASE = {
+  fileName: 'cross_sell_april_v2.csv',
+  totalRows: 0,
+  sizeBytes: 12_400,
+  daysAgo: 1,
+  hours: 4,
+};
+
+/** Implies: GET /audiences */
+export async function getAudienceFiles(workspaceId: string): Promise<AudienceFile[]> {
+  const camps = CAMPAIGNS.filter((c) => c.workspaceId === workspaceId);
+  const out: AudienceFile[] = [];
+
+  // Pending (synthetic, not yet attached to a campaign).
+  const now = new Date('2026-04-30T11:00:00.000Z').getTime();
+  for (const f of PENDING_AUDIENCE_FILES_BASE) {
+    const uploadedAt = new Date(now - (f.daysAgo * 86_400_000 + f.hours * 3_600_000)).toISOString();
+    out.push({
+      id: `aud_pending_${f.fileName.replace(/\W+/g, '_')}`,
+      workspaceId,
+      fileName: f.fileName,
+      uploadedAt,
+      uploadedBy: 'user_001',
+      source: 'new_campaign',
+      totalRows: f.totalRows,
+      validRows: 0,
+      invalidRows: 0,
+      duplicates: 0,
+      status: 'pending' as AudienceFileStatus,
+      fileSizeBytes: f.sizeBytes,
+      downloadUrl: `/mocks/audiences/${f.fileName}`,
+    });
+  }
+
+  // One failed file for demo.
+  const failedAt = new Date(now - (FAILED_AUDIENCE_FILE_BASE.daysAgo * 86_400_000 + FAILED_AUDIENCE_FILE_BASE.hours * 3_600_000)).toISOString();
+  out.push({
+    id: `aud_failed_${FAILED_AUDIENCE_FILE_BASE.fileName.replace(/\W+/g, '_')}`,
+    workspaceId,
+    fileName: FAILED_AUDIENCE_FILE_BASE.fileName,
+    uploadedAt: failedAt,
+    uploadedBy: 'user_001',
+    source: 'new_campaign',
+    totalRows: 0,
+    validRows: 0,
+    invalidRows: 0,
+    duplicates: 0,
+    status: 'failed',
+    fileSizeBytes: FAILED_AUDIENCE_FILE_BASE.sizeBytes,
+    downloadUrl: `/mocks/audiences/${FAILED_AUDIENCE_FILE_BASE.fileName}`,
+  });
+
+  // Validated — derived from existing campaigns and their runs.
+  for (const c of camps) {
+    if (c.contactList.totalRows > 0) {
+      out.push({
+        id: `aud_${c.id}_initial`,
+        workspaceId,
+        fileName: c.contactList.fileName,
+        uploadedAt: c.contactList.uploadedAt ?? c.createdAt,
+        uploadedBy: c.createdBy,
+        source: 'new_campaign',
+        campaignId: c.id,
+        campaignName: c.name,
+        totalRows: c.contactList.totalRows,
+        validRows: c.contactList.validRows,
+        invalidRows: c.contactList.invalidRows,
+        duplicates: c.contactList.duplicates,
+        status: 'validated',
+        // Approx size: rows × ~150 bytes/row
+        fileSizeBytes: c.contactList.totalRows * 150,
+        downloadUrl: `/mocks/audiences/${c.contactList.fileName}`,
+      });
+    }
+    for (const r of c.runs ?? []) {
+      out.push({
+        id: `aud_${r.id}`,
+        workspaceId,
+        fileName: r.contactList.fileName,
+        uploadedAt: r.contactList.uploadedAt ?? r.startedAt,
+        uploadedBy: r.startedBy,
+        source: 'new_run',
+        campaignId: c.id,
+        campaignName: c.name,
+        totalRows: r.contactList.totalRows,
+        validRows: r.contactList.validRows,
+        invalidRows: r.contactList.invalidRows,
+        duplicates: r.contactList.duplicates,
+        status: 'validated',
+        fileSizeBytes: r.contactList.totalRows * 150,
+        downloadUrl: `/mocks/audiences/${r.contactList.fileName}`,
+      });
+    }
+  }
+
+  // Newest first
+  out.sort((a, b) => (a.uploadedAt < b.uploadedAt ? 1 : -1));
+  return delay(out);
+}
+
+// ────────────────────────────────────────────────────────────────────
+// Campaign mutations
+// ────────────────────────────────────────────────────────────────────
+
+/** Implies: PATCH /campaigns/:id { status }
+ *
+ * Toggles the operator-facing active/inactive flag. Underlying schedule
+ * and run history are untouched — the dialer just stops/resumes flowing
+ * calls based on this signal.
+ */
+export async function setCampaignStatus(
+  workspaceId: string,
+  campaignId: string,
+  status: CampaignStatus,
+): Promise<Campaign> {
+  const camp = CAMPAIGNS.find((c) => c.workspaceId === workspaceId && c.id === campaignId);
+  if (!camp) {
+    return delay(
+      Promise.reject(new Error(`Campaign ${campaignId} not found`)) as never,
+      'fast',
+    );
+  }
+  camp.status = status;
+  if (status === 'inactive' && !camp.completedAt) {
+    camp.completedAt = new Date().toISOString();
+  }
+  if (status === 'active' && camp.completedAt) {
+    camp.completedAt = undefined;
+  }
+  return delay(camp, 'fast');
 }

@@ -1,61 +1,41 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
-  CheckCircle2,
   AlertTriangle,
-  FileText,
   RefreshCw,
   Calendar,
+  Inbox,
+  Plus,
 } from 'lucide-react';
-import type { VoiceAgent, ContactList, CampaignSchedule } from '@/types';
-import { getVoiceAgents, createCampaign } from '@/lib/api';
+import type {
+  ContactList,
+  CampaignSchedule,
+  CampaignGoal,
+  RetryPolicy,
+} from '@/types';
+import { DEFAULT_RETRY_POLICY } from '@/types';
+import { createCampaign } from '@/lib/api';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { useToast } from '@/components/ui/Toast';
 import { PageHeader } from '@/components/features/PageHeader';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
 import { Input, Label, HelperText } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
 import { Select } from '@/components/ui/Select';
 import { Radio } from '@/components/ui/Radio';
 import { FileDropzone } from '@/components/ui/FileDropzone';
 import { Modal } from '@/components/ui/Modal';
-import { Skeleton } from '@/components/ui/Skeleton';
-import {
-  parseCsv,
-  autoDetectPhoneColumn,
-  validateCsv,
-  type CsvValidation,
-} from '@/lib/csv';
+import { CsvMappingPanel } from '@/components/features/CsvMappingPanel';
+import { RetryPolicyEditor } from '@/components/features/RetryPolicyEditor';
+import { useCsvUpload, buildColumnMapping } from '@/lib/csvUpload';
 import { formatNumber, formatDateTime } from '@/lib/format';
+import { intentLabel, INTENT_LABEL } from '@/lib/labels';
 import { cn } from '@/lib/cn';
 
 type ScheduleType = 'immediate' | 'scheduled';
-
-const VAR_OPTIONS = [
-  { value: '__skip__',         label: "Don't import" },
-  { value: 'phone_number',     label: 'Phone number  (required)' },
-  { value: 'customer_name',    label: 'Customer name' },
-  { value: 'loan_amount',      label: 'Loan amount' },
-  { value: 'due_date',         label: 'Due date' },
-  { value: 'last_interaction', label: 'Last interaction' },
-  { value: 'custom_var_1',     label: 'Custom variable 1' },
-  { value: 'custom_var_2',     label: 'Custom variable 2' },
-  { value: 'custom_var_3',     label: 'Custom variable 3' },
-  { value: 'custom_var_4',     label: 'Custom variable 4' },
-  { value: 'custom_var_5',     label: 'Custom variable 5' },
-];
-
-interface CsvState {
-  fileName: string;
-  fileSize: number;
-  parsedAt: string;
-  headers: string[];
-  rows: string[][];
-  /** mapping by column index → variable */
-  mapping: Record<number, string>;
-}
 
 export default function CreateCampaign() {
   const { activeWorkspace } = useWorkspace();
@@ -64,162 +44,87 @@ export default function CreateCampaign() {
 
   // Section 1
   const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [voiceAgentId, setVoiceAgentId] = useState('');
-  const [agents, setAgents] = useState<VoiceAgent[] | null>(null);
+  const [goalDescription, setGoalDescription] = useState('');
+  const [goalTargetIntent, setGoalTargetIntent] = useState<string>('payment_promised');
 
-  // Section 2
-  const [csv, setCsv] = useState<CsvState | null>(null);
-  const [parsing, setParsing] = useState(false);
-  const [csvError, setCsvError] = useState<string | null>(null);
+  // Section 2 — CSV
+  const upload = useCsvUpload();
+  const { csv, parsing, error: csvError, phoneColIndex, validation, handleFile, setMapping, clear: clearCsv, setError: setCsvError } = upload;
 
-  // Section 3
+  // Section 3 — schedule
   const [scheduleType, setScheduleType] = useState<ScheduleType>('immediate');
   const [startsAt, setStartsAt] = useState('');
+
+  // Section 4 — feedback intents (which post-call outcomes to track)
+  const [feedbackIntents, setFeedbackIntents] = useState<string[]>([]);
+
+  // Section 5 — retry policy
+  const [retryPolicy, setRetryPolicy] = useState<RetryPolicy>(DEFAULT_RETRY_POLICY);
 
   // Confirmation
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (!activeWorkspace) return;
-    getVoiceAgents(activeWorkspace.id).then(setAgents);
-  }, [activeWorkspace]);
-
-  // ── CSV handling ───────────────────────────────────────────────────
-  function handleFile(file: File) {
-    setCsvError(null);
-    setParsing(true);
-    const reader = new FileReader();
-    reader.onload = () => {
-      const text = String(reader.result ?? '');
-      const { headers, rows } = parseCsv(text);
-      if (headers.length === 0) {
-        setCsvError('Could not parse this file as CSV.');
-        setParsing(false);
-        return;
-      }
-      // 200ms parse simulation for realism
-      setTimeout(() => {
-        const phoneIdx = autoDetectPhoneColumn(headers);
-        const mapping: Record<number, string> = {};
-        headers.forEach((_, i) => { mapping[i] = '__skip__'; });
-        if (phoneIdx != null) mapping[phoneIdx] = 'phone_number';
-
-        // Auto-suggest other common columns
-        headers.forEach((h, i) => {
-          if (mapping[i] !== '__skip__') return;
-          const lower = h.toLowerCase();
-          if (/name/.test(lower)) mapping[i] = 'customer_name';
-          else if (/amount|principal|emi/.test(lower)) mapping[i] = 'loan_amount';
-          else if (/due|date/.test(lower)) mapping[i] = 'due_date';
-          else if (/last/.test(lower)) mapping[i] = 'last_interaction';
-        });
-
-        setCsv({
-          fileName: file.name,
-          fileSize: file.size,
-          parsedAt: new Date().toISOString(),
-          headers,
-          rows,
-          mapping,
-        });
-        setParsing(false);
-      }, 200);
-    };
-    reader.onerror = () => {
-      setCsvError('Could not read this file.');
-      setParsing(false);
-    };
-    reader.readAsText(file);
-  }
-
-  function setMapping(colIndex: number, variable: string) {
-    if (!csv) return;
-    const next = { ...csv.mapping };
-    // Enforce: phone_number can map to exactly one column.
-    if (variable === 'phone_number') {
-      Object.keys(next).forEach((k) => {
-        if (next[Number(k)] === 'phone_number') next[Number(k)] = '__skip__';
-      });
-    }
-    next[colIndex] = variable;
-    setCsv({ ...csv, mapping: next });
-  }
-
-  // ── Validation ─────────────────────────────────────────────────────
-  const phoneColIndex = useMemo(() => {
-    if (!csv) return null;
-    const entry = Object.entries(csv.mapping).find(([, v]) => v === 'phone_number');
-    return entry ? Number(entry[0]) : null;
-  }, [csv]);
-
-  const validation: CsvValidation | null = useMemo(() => {
-    if (!csv || phoneColIndex == null) return null;
-    return validateCsv(csv.rows, phoneColIndex);
-  }, [csv, phoneColIndex]);
-
   const canLaunch = useMemo(() => {
     if (!name.trim()) return false;
-    if (!voiceAgentId) return false;
     if (!csv) return false;
     if (phoneColIndex == null) return false;
     if (!validation || validation.validRows === 0) return false;
     if (scheduleType === 'scheduled' && !startsAt) return false;
     return true;
-  }, [name, voiceAgentId, csv, phoneColIndex, validation, scheduleType, startsAt]);
-
-  const canSaveDraft = useMemo(() => name.trim().length > 0, [name]);
+  }, [name, csv, phoneColIndex, validation, scheduleType, startsAt]);
 
   // ── Submit ─────────────────────────────────────────────────────────
-  async function submit(asDraft: boolean) {
+  async function submit() {
     if (!activeWorkspace) return;
-    if (!asDraft && !canLaunch) return;
+    if (!canLaunch) return;
     setSubmitting(true);
     try {
-      const colMap: Record<string, string> = {};
-      if (csv) {
-        Object.entries(csv.mapping).forEach(([k, v]) => {
-          if (v !== '__skip__') colMap[csv.headers[Number(k)]] = v;
-        });
-      }
-      const contactList: ContactList = csv
-        ? {
-            fileName: csv.fileName,
-            uploadedAt: csv.parsedAt,
-            totalRows: validation?.totalRows ?? csv.rows.length,
-            validRows: validation?.validRows ?? 0,
-            invalidRows: validation?.invalidRows ?? 0,
-            duplicates: validation?.duplicates ?? 0,
-            columnMapping: colMap,
-          }
-        : {
-            fileName: 'draft.csv',
-            uploadedAt: new Date().toISOString(),
-            totalRows: 0,
-            validRows: 0,
-            invalidRows: 0,
-            duplicates: 0,
-            columnMapping: {},
-          };
+      const contactList: ContactList = {
+        fileName: csv!.fileName,
+        uploadedAt: csv!.parsedAt,
+        totalRows: validation?.totalRows ?? csv!.rows.length,
+        validRows: validation?.validRows ?? 0,
+        invalidRows: validation?.invalidRows ?? 0,
+        duplicates: validation?.duplicates ?? 0,
+        columnMapping: buildColumnMapping(csv!),
+      };
       const schedule: CampaignSchedule =
         scheduleType === 'scheduled'
           ? { type: 'scheduled', startsAt: new Date(startsAt).toISOString(), timezone: activeWorkspace.timezone }
           : { type: 'immediate', timezone: activeWorkspace.timezone };
 
+      const goalText = goalDescription.trim();
+      const goal: CampaignGoal | undefined = goalText
+        ? { description: goalText, targetIntent: goalTargetIntent }
+        : undefined;
+
       const created = await createCampaign(
         activeWorkspace.id,
-        { name: name.trim(), description: description.trim() || undefined, voiceAgentId, contactList, schedule },
-        asDraft,
+        {
+          name: name.trim(),
+          // Voice agent is no longer surfaced at creation time — backend
+          // assigns one (or the operator picks later via a different flow).
+          // For the UI mock we point at the workspace's default agent.
+          voiceAgentId: 'agent_loan_recovery',
+          contactList,
+          schedule,
+          retryPolicy,
+          goal,
+          feedbackIntents: (() => {
+            const cleaned = feedbackIntents.map((s) => s.trim()).filter(Boolean);
+            return cleaned.length ? cleaned : undefined;
+          })(),
+        },
       );
 
-      if (asDraft) {
-        toast.success('Saved as draft', `'${created.name}' is saved. You can launch it later.`);
-        navigate('/campaigns');
-      } else {
-        toast.success('Campaign launched', `'${created.name}' is now ${created.status === 'scheduled' ? 'scheduled' : 'running'}.`);
-        navigate(`/campaigns/${created.id}`);
-      }
+      toast.success(
+        'Campaign launched',
+        scheduleType === 'scheduled'
+          ? `'${created.name}' is scheduled.`
+          : `'${created.name}' is now active.`,
+      );
+      navigate(`/campaigns/${created.id}`);
     } finally {
       setSubmitting(false);
       setConfirmOpen(false);
@@ -229,7 +134,6 @@ export default function CreateCampaign() {
   if (!activeWorkspace) return null;
 
   const validCount = validation?.validRows ?? 0;
-  const selectedAgent = agents?.find((a) => a.id === voiceAgentId) ?? null;
 
   return (
     <>
@@ -249,56 +153,51 @@ export default function CreateCampaign() {
 
       <div className="space-y-6 max-w-4xl">
         {/* 7.1 BASICS */}
-        <Section title="Campaign basics" description="Name your campaign and choose a voice agent.">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div>
-              <Label htmlFor="name" required>Campaign name</Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value.slice(0, 80))}
-                placeholder="e.g. EMI Reminder — May 2026"
-                maxLength={80}
-              />
-              <HelperText>{name.length}/80</HelperText>
-            </div>
-
-            <div>
-              <Label htmlFor="agent" required>Voice agent</Label>
-              {agents === null ? (
-                <Skeleton className="h-10 w-full" />
-              ) : (
-                <Select
-                  id="agent"
-                  value={voiceAgentId}
-                  onChange={(e) => setVoiceAgentId(e.target.value)}
-                >
-                  <option value="" disabled>Choose an agent...</option>
-                  {agents.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.name} — {a.voice} ({a.language})
-                    </option>
-                  ))}
-                </Select>
-              )}
-              {selectedAgent && (
-                <HelperText>{selectedAgent.description}</HelperText>
-              )}
-            </div>
+        <Section title="Campaign basics" description="Name the campaign and define what success looks like.">
+          <div>
+            <Label htmlFor="name" required>Campaign name</Label>
+            <Input
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value.slice(0, 80))}
+              placeholder="e.g. EMI Reminder — May 2026"
+              maxLength={80}
+            />
+            <HelperText>{name.length}/80</HelperText>
           </div>
 
           <div className="mt-5">
-            <Label htmlFor="description">Description (optional)</Label>
+            <Label htmlFor="goal">Goal</Label>
             <Textarea
-              id="description"
+              id="goal"
               rows={2}
-              value={description}
-              onChange={(e) => setDescription(e.target.value.slice(0, 200))}
-              placeholder="What's this campaign for?"
+              value={goalDescription}
+              onChange={(e) => setGoalDescription(e.target.value.slice(0, 200))}
+              placeholder="What does success look like? e.g. Lock in payment commitments before the EMI date."
               maxLength={200}
             />
-            <HelperText>{description.length}/200</HelperText>
+            <HelperText>
+              {goalDescription.length}/200 — surfaces as a Goal card on the campaign's analytics view.
+            </HelperText>
           </div>
+
+          {goalDescription.trim().length > 0 && (
+            <div className="mt-4">
+              <Label htmlFor="goal-target">Counts as goal met when call intent is</Label>
+              <Select
+                id="goal-target"
+                value={goalTargetIntent}
+                onChange={(e) => setGoalTargetIntent(e.target.value)}
+              >
+                {Object.keys(INTENT_LABEL).map((i) => (
+                  <option key={i} value={i}>{intentLabel(i)}</option>
+                ))}
+              </Select>
+              <HelperText>
+                Analytics will report % of answered calls that hit this intent.
+              </HelperText>
+            </div>
+          )}
         </Section>
 
         {/* 7.2 CONTACT LIST */}
@@ -331,7 +230,7 @@ export default function CreateCampaign() {
               setMapping={setMapping}
               phoneColIndex={phoneColIndex}
               validation={validation}
-              onReplace={() => { setCsv(null); setCsvError(null); }}
+              onReplace={clearCsv}
             />
           )}
         </Section>
@@ -379,14 +278,23 @@ export default function CreateCampaign() {
           </div>
         </Section>
 
+        {/* 7.4 FEEDBACK INTENTS */}
+        <FeedbackIntentsSection
+          value={feedbackIntents}
+          onChange={setFeedbackIntents}
+        />
+
+        {/* 7.5 RETRY POLICY */}
+        <RetryPolicyEditor value={retryPolicy} onChange={setRetryPolicy} />
+
         {/* FOOTER */}
         <div className="flex items-center justify-end gap-2 pt-4 border-t border-border-subtle">
           <Button
             variant="ghost"
-            onClick={() => submit(true)}
-            disabled={!canSaveDraft || submitting}
+            onClick={() => navigate('/campaigns')}
+            disabled={submitting}
           >
-            Save as draft
+            Cancel
           </Button>
           <Button
             disabled={!canLaunch || submitting}
@@ -397,7 +305,7 @@ export default function CreateCampaign() {
         </div>
       </div>
 
-      {/* 7.7 CONFIRMATION MODAL */}
+      {/* CONFIRMATION MODAL */}
       <Modal
         open={confirmOpen}
         onClose={() => !submitting && setConfirmOpen(false)}
@@ -412,16 +320,15 @@ export default function CreateCampaign() {
             <Button variant="ghost" onClick={() => setConfirmOpen(false)} disabled={submitting}>
               Cancel
             </Button>
-            <Button onClick={() => submit(false)} loading={submitting}>
+            <Button onClick={() => submit()} loading={submitting}>
               {scheduleType === 'scheduled' ? 'Schedule now' : 'Launch now'}
             </Button>
           </>
         }
       >
         <dl className="divide-y divide-border-subtle">
-          <SummaryRow term="Name"             definition={name} />
-          <SummaryRow term="Agent"            definition={selectedAgent?.name ?? '—'} />
-          <SummaryRow term="Contacts"         definition={`${formatNumber(validCount, activeWorkspace)} valid`} />
+          <SummaryRow term="Name"     definition={name} />
+          <SummaryRow term="Contacts" definition={`${formatNumber(validCount, activeWorkspace)} valid`} />
           <SummaryRow
             term="Starts"
             definition={
@@ -429,6 +336,29 @@ export default function CreateCampaign() {
                 ? formatDateTime(new Date(startsAt).toISOString(), activeWorkspace)
                 : 'Immediately'
             }
+          />
+          <SummaryRow
+            term="Retries"
+            definition={
+              retryPolicy.enabled
+                ? `${retryPolicy.maxAttempts} attempt${retryPolicy.maxAttempts === 1 ? '' : 's'} · every ${retryPolicy.intervalMinutes < 60 ? `${retryPolicy.intervalMinutes}m` : `${(retryPolicy.intervalMinutes / 60).toFixed(0)}h`}`
+                : 'Off'
+            }
+          />
+          <SummaryRow
+            term="Goal"
+            definition={
+              goalDescription.trim()
+                ? `${goalDescription.trim()} · met when intent is ${intentLabel(goalTargetIntent)}`
+                : 'Not set'
+            }
+          />
+          <SummaryRow
+            term="Feedback intents"
+            definition={(() => {
+              const cleaned = feedbackIntents.map((s) => s.trim()).filter(Boolean);
+              return cleaned.length ? cleaned.join(' · ') : 'None';
+            })()}
           />
         </dl>
       </Modal>
@@ -443,22 +373,15 @@ export default function CreateCampaign() {
 function Section({
   title,
   description,
-  icon,
   children,
 }: {
   title: string;
   description?: string;
-  icon?: ReactNode;
   children: ReactNode;
 }) {
   return (
     <Card padding="lg">
       <div className="flex items-start gap-3 mb-5">
-        {icon && (
-          <div className="h-8 w-8 rounded-md bg-brand-50 text-brand-700 flex items-center justify-center shrink-0">
-            {icon}
-          </div>
-        )}
         <div className="flex-1">
           <h3 className="text-base font-semibold text-text-primary">{title}</h3>
           {description && <p className="text-sm text-text-tertiary mt-0.5">{description}</p>}
@@ -471,7 +394,7 @@ function Section({
 
 function SummaryRow({ term, definition }: { term: string; definition: ReactNode }) {
   return (
-    <div className="grid grid-cols-[120px_1fr] gap-3 py-2.5 text-sm">
+    <div className="grid grid-cols-[140px_1fr] gap-3 py-2.5 text-sm">
       <dt className="text-text-tertiary">{term}</dt>
       <dd className="text-text-primary font-medium tabular truncate">{definition}</dd>
     </div>
@@ -479,183 +402,88 @@ function SummaryRow({ term, definition }: { term: string; definition: ReactNode 
 }
 
 // ────────────────────────────────────────────────────────────────────
-// CSV mapping panel — column → variable + preview + validation
+// Feedback intents section — operator types in the post-call outcomes
+// they want to actively track. One input per row; "+ Add intent" adds
+// another row, "Remove" drops a row. Free text — operators may know
+// outcomes that are specific to their funnel.
 // ────────────────────────────────────────────────────────────────────
-function CsvMappingPanel({
-  csv,
-  setMapping,
-  phoneColIndex,
-  validation,
-  onReplace,
-}: {
-  csv: CsvState;
-  setMapping: (colIndex: number, variable: string) => void;
-  phoneColIndex: number | null;
-  validation: CsvValidation | null;
-  onReplace: () => void;
-}) {
-  return (
-    <div className="space-y-5">
-      {/* File header */}
-      <div className="flex items-center gap-3 rounded-md border border-border-subtle bg-slate-25 px-4 py-3">
-        <div className="h-9 w-9 rounded-md bg-blue-50 text-blue-700 flex items-center justify-center shrink-0">
-          <FileText size={16} />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="text-sm font-medium text-text-primary truncate">{csv.fileName}</div>
-          <div className="text-xs text-text-tertiary">
-            {(csv.fileSize / 1024).toFixed(1)} KB · {csv.headers.length} columns · {csv.rows.length.toLocaleString('en-IN')} rows
-          </div>
-        </div>
-        <button
-          onClick={onReplace}
-          className="text-xs font-medium text-blue-600 hover:text-blue-700"
-        >
-          Replace CSV
-        </button>
-      </div>
-
-      {/* Mapping */}
-      <div>
-        <h4 className="text-sm font-semibold text-text-primary mb-2">Map columns</h4>
-        <p className="text-xs text-text-tertiary mb-3">
-          Match each column to a variable. <span className="text-danger-700 font-medium">Phone number is required and must map to exactly one column.</span>
-        </p>
-        <div className="rounded-md border border-border-subtle overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-25 border-b border-border-subtle">
-              <tr>
-                <th className="text-left px-4 py-2.5 font-medium text-text-tertiary text-xs uppercase tracking-wide">CSV column</th>
-                <th className="text-left px-4 py-2.5 font-medium text-text-tertiary text-xs uppercase tracking-wide">Sample</th>
-                <th className="text-left px-4 py-2.5 font-medium text-text-tertiary text-xs uppercase tracking-wide w-64">Variable</th>
-              </tr>
-            </thead>
-            <tbody>
-              {csv.headers.map((h, i) => {
-                const sample = csv.rows[0]?.[i] ?? '';
-                return (
-                  <tr key={i} className="border-b border-border-subtle last:border-b-0">
-                    <td className="px-4 py-2 font-medium text-text-primary">{h}</td>
-                    <td className="px-4 py-2 text-text-tertiary truncate max-w-[180px]">
-                      <code className="font-mono text-xs">{sample}</code>
-                    </td>
-                    <td className="px-4 py-2">
-                      <Select
-                        value={csv.mapping[i] ?? '__skip__'}
-                        onChange={(e) => setMapping(i, e.target.value)}
-                        className="h-8"
-                      >
-                        {VAR_OPTIONS.map((opt) => (
-                          <option key={opt.value} value={opt.value}>{opt.label}</option>
-                        ))}
-                      </Select>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Preview */}
-      <div>
-        <h4 className="text-sm font-semibold text-text-primary mb-2">Preview (first 10 rows)</h4>
-        <div className="rounded-md border border-border-subtle overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-25 border-b border-border-subtle">
-              <tr>
-                {csv.headers.map((h, i) => {
-                  const v = csv.mapping[i];
-                  return (
-                    <th key={i} className="text-left px-3 py-2 font-medium text-text-primary whitespace-nowrap">
-                      <div>{h}</div>
-                      <div className={cn(
-                        'text-[10px] uppercase tracking-wide font-semibold mt-0.5',
-                        v === '__skip__' ? 'text-text-tertiary'
-                          : v === 'phone_number' ? 'text-blue-600' : 'text-brand-700',
-                      )}>
-                        {v === '__skip__' ? 'Skipped' : VAR_OPTIONS.find((o) => o.value === v)?.label.split(' ')[0]}
-                      </div>
-                    </th>
-                  );
-                })}
-              </tr>
-            </thead>
-            <tbody>
-              {csv.rows.slice(0, 10).map((row, ri) => (
-                <tr key={ri} className="border-b border-border-subtle last:border-b-0">
-                  {csv.headers.map((_, ci) => (
-                    <td key={ci} className="px-3 py-1.5 text-text-secondary whitespace-nowrap font-mono text-xs">
-                      {row[ci] ?? ''}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Validation summary */}
-      {phoneColIndex == null ? (
-        <div className="inline-flex items-center gap-2 rounded-md bg-warning-50 border border-warning-500/20 px-3 py-2 text-sm text-warning-700">
-          <AlertTriangle size={16} />
-          Map a phone number column to continue.
-        </div>
-      ) : validation && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <ValidationStat
-            tone="neutral"
-            label="Total rows"
-            value={validation.totalRows.toLocaleString('en-IN')}
-          />
-          <ValidationStat
-            tone="success"
-            label="Valid"
-            value={validation.validRows.toLocaleString('en-IN')}
-            icon={<CheckCircle2 size={14} />}
-          />
-          <ValidationStat
-            tone="danger"
-            label="Invalid"
-            value={validation.invalidRows.toLocaleString('en-IN')}
-            icon={<AlertTriangle size={14} />}
-          />
-          <ValidationStat
-            tone="warning"
-            label="Duplicates"
-            value={validation.duplicates.toLocaleString('en-IN')}
-          />
-        </div>
-      )}
-    </div>
-  );
+interface FeedbackIntentsSectionProps {
+  value: string[];
+  onChange: (next: string[]) => void;
 }
 
-function ValidationStat({
-  tone,
-  label,
-  value,
-  icon,
-}: {
-  tone: 'neutral' | 'success' | 'warning' | 'danger';
-  label: string;
-  value: string;
-  icon?: ReactNode;
-}) {
-  const styles = {
-    neutral: 'bg-slate-50 border-slate-200 text-slate-700',
-    success: 'bg-success-50 border-success-500/20 text-success-700',
-    warning: 'bg-warning-50 border-warning-500/20 text-warning-700',
-    danger:  'bg-danger-50 border-danger-500/20 text-danger-700',
-  } as const;
+function FeedbackIntentsSection({ value, onChange }: FeedbackIntentsSectionProps) {
+  // Always show at least one input row, even when nothing has been
+  // typed yet. Empty rows are filtered out at submit time.
+  const rows = value.length > 0 ? value : [''];
+
+  const setRow = (i: number, v: string) => {
+    const next = [...rows];
+    next[i] = v;
+    onChange(next);
+  };
+
+  const removeRow = (i: number) => {
+    onChange(rows.filter((_, idx) => idx !== i));
+  };
+
+  const addRow = () => onChange([...rows, '']);
+
   return (
-    <div className={cn('rounded-md border px-4 py-3', styles[tone])}>
-      <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wide font-semibold opacity-80">
-        {icon} {label}
+    <Card padding="lg">
+      <div className="flex items-start gap-3 mb-5">
+        <div className="h-9 w-9 rounded-md bg-blue-50 text-blue-700 flex items-center justify-center shrink-0">
+          <Inbox size={16} />
+        </div>
+        <div className="flex-1">
+          <h3 className="text-base font-semibold text-text-primary">
+            Feedback intents
+          </h3>
+          <p className="text-sm text-text-tertiary mt-0.5">
+            Add the post-call outcomes you want to track closely.{' '}
+            <span className="text-text-secondary">
+              For example: <em className="not-italic font-medium">KYC completed on call</em>,{' '}
+              <em className="not-italic font-medium">Application submitted</em>,{' '}
+              <em className="not-italic font-medium">Call me later</em>.
+            </span>
+          </p>
+        </div>
       </div>
-      <div className="text-xl font-semibold tabular mt-1">{value}</div>
-    </div>
+
+      <div className="space-y-3">
+        {rows.map((row, i) => (
+          <div key={i} className="flex items-center gap-3">
+            <Input
+              placeholder="e.g. KYC completed on call"
+              value={row}
+              onChange={(e) => setRow(i, e.target.value)}
+              className="flex-1"
+            />
+            <button
+              type="button"
+              onClick={() => removeRow(i)}
+              disabled={rows.length === 1 && row === ''}
+              className={cn(
+                'text-sm font-medium transition-colors shrink-0',
+                rows.length === 1 && row === ''
+                  ? 'text-text-tertiary opacity-40 cursor-not-allowed'
+                  : 'text-danger-700 hover:text-danger-500',
+              )}
+            >
+              Remove
+            </button>
+          </div>
+        ))}
+      </div>
+
+      <button
+        type="button"
+        onClick={addRow}
+        className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
+      >
+        <Plus size={14} strokeWidth={2.5} />
+        Add intent
+      </button>
+    </Card>
   );
 }

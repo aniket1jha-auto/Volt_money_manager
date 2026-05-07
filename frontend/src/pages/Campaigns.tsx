@@ -23,11 +23,9 @@ type SortKey = 'recent' | 'name' | 'status';
 const PAGE_SIZE = 12;
 
 const STATUS_SEGMENTS: { value: StatusFilter; label: string }[] = [
-  { value: 'all',       label: 'All' },
-  { value: 'active',    label: 'Active' },
-  { value: 'scheduled', label: 'Scheduled' },
-  { value: 'completed', label: 'Completed' },
-  { value: 'draft',     label: 'Draft' },
+  { value: 'all',      label: 'All' },
+  { value: 'active',   label: 'Active' },
+  { value: 'inactive', label: 'Inactive' },
 ];
 
 export default function Campaigns() {
@@ -98,9 +96,11 @@ export default function Campaigns() {
     if (!allCampaigns) return null;
     const c: Record<StatusFilter, number> = {
       all: allCampaigns.length,
-      active: 0, scheduled: 0, completed: 0, draft: 0, paused: 0,
+      active: 0, inactive: 0,
     };
-    for (const x of allCampaigns) c[x.status as StatusFilter] = (c[x.status as StatusFilter] ?? 0) + 1;
+    for (const x of allCampaigns) {
+      if (x.status === 'active' || x.status === 'inactive') c[x.status] += 1;
+    }
     return c;
   }, [allCampaigns]);
 

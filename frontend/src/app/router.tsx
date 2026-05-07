@@ -6,8 +6,8 @@ import SelectWorkspace from '@/pages/SelectWorkspace';
 import Campaigns from '@/pages/Campaigns';
 import CreateCampaign from '@/pages/CreateCampaign';
 import CampaignDetail from '@/pages/CampaignDetail';
-import CampaignAnalytics from '@/pages/CampaignAnalytics';
-import AgentAnalytics from '@/pages/AgentAnalytics';
+import Audiences from '@/pages/Audiences';
+import Analytics from '@/pages/Analytics';
 
 export const router = createBrowserRouter([
   { path: '/login', element: <Login /> },
@@ -24,9 +24,13 @@ export const router = createBrowserRouter([
       { path: 'campaigns', element: <Campaigns /> },
       { path: 'campaigns/new', element: <CreateCampaign /> },
       { path: 'campaigns/:id', element: <CampaignDetail /> },
-      { path: 'analytics/campaigns', element: <CampaignAnalytics /> },
-      { path: 'analytics/agents', element: <AgentAnalytics /> },
-      { path: 'analytics/agents/:callId', element: <AgentAnalytics /> },
+      { path: 'audiences', element: <Audiences /> },
+      { path: 'analytics', element: <Analytics /> },
+      { path: 'analytics/calls/:callId', element: <Analytics /> },
+      // Back-compat redirects from the older split-analytics URLs.
+      { path: 'analytics/campaigns', element: <Navigate to="/analytics" replace /> },
+      { path: 'analytics/agents', element: <Navigate to="/analytics" replace /> },
+      { path: 'analytics/agents/:callId', element: <Navigate to="/analytics" replace /> },
       { path: '*', element: <Navigate to="/campaigns" replace /> },
     ],
   },

@@ -72,22 +72,24 @@ const LAST_NAMES = [
   'Trivedi', 'Pillai', 'Krishnan', 'Subramanian', 'Raman', 'Hegde',
 ];
 
+// Intent vocabulary — outcome labels the AI tags onto a call once it
+// ends. They describe WHAT HAPPENED, not what the customer asked about.
 const INTENTS = [
-  'loan_inquiry',
-  'emi_status',
-  'repayment_intent',
-  'payment_promise',
-  'kyc_pending',
-  'application_status',
-  'callback_request',
-  'document_request',
-  'balance_inquiry',
-  'renewal_inquiry',
-  'complaint',
-  'dispute_charge',
-  'financial_hardship',
+  'kyc_completed_on_call',
+  'application_submitted',
+  'interested_will_apply',
+  'call_me_later',
+  'not_interested',
+  'payment_promised',
+  'payment_already_done',
+  'documents_requested',
+  'complaint_raised',
+  'not_eligible',
+  'requesting_branch_visit',
   'wrong_number',
-  'agent_handoff_request',
+  'dnd_requested',
+  'transferred_to_human',
+  'customer_unavailable',
 ];
 
 const FAILURE_REASONS = [
@@ -101,21 +103,21 @@ const FAILURE_REASONS = [
 ];
 
 const OUTCOMES_BY_INTENT = {
-  loan_inquiry: ['shared_terms', 'requested_callback', 'lost_interest'],
-  emi_status: ['provided_status', 'escalated_to_team', 'requested_statement'],
-  repayment_intent: ['agreed_to_pay', 'partial_commitment', 'no_resolution'],
-  payment_promise: ['agreed_to_pay', 'committed_amount', 'requested_grace_period'],
-  kyc_pending: ['kyc_link_shared', 'agreed_to_complete', 'expressed_difficulty'],
-  application_status: ['provided_status', 'escalated_to_team'],
-  callback_request: ['callback_scheduled'],
-  document_request: ['email_sent', 'whatsapp_sent', 'requested_physical'],
-  balance_inquiry: ['provided_balance'],
-  renewal_inquiry: ['shared_terms', 'requested_callback'],
-  complaint: ['ticket_created', 'escalated_to_team', 'resolved_inline'],
-  dispute_charge: ['ticket_created', 'escalated_to_team'],
-  financial_hardship: ['restructuring_offered', 'grace_period_offered', 'no_resolution'],
-  wrong_number: ['contact_removed'],
-  agent_handoff_request: ['transferred_to_human'],
+  kyc_completed_on_call:    ['kyc_done_on_call', 'documents_verified'],
+  application_submitted:    ['application_filed', 'application_pending_docs'],
+  interested_will_apply:    ['shared_terms', 'will_decide_later', 'requested_email_followup'],
+  call_me_later:            ['callback_scheduled', 'callback_requested_no_time'],
+  not_interested:           ['noted_disinterest', 'noted_already_has_loan'],
+  payment_promised:         ['agreed_to_pay', 'committed_amount', 'partial_commitment'],
+  payment_already_done:     ['provided_status', 'requested_statement'],
+  documents_requested:      ['email_sent', 'whatsapp_sent', 'requested_physical'],
+  complaint_raised:         ['ticket_created', 'escalated_to_team', 'resolved_inline'],
+  not_eligible:             ['flagged_ineligible', 'requested_review'],
+  requesting_branch_visit:  ['branch_appointment_offered', 'noted_branch_preference'],
+  wrong_number:             ['contact_removed'],
+  dnd_requested:            ['dnd_recorded'],
+  transferred_to_human:     ['transferred_to_human'],
+  customer_unavailable:     ['no_resolution', 'callback_requested_no_time'],
 };
 
 const ENTITY_TYPES = ['amount', 'date', 'product', 'reference', 'other'];
@@ -187,36 +189,42 @@ const voiceAgents = [
 // ────────────────────────────────────────────────────────────────────
 // Campaigns — 25 across all statuses
 // ────────────────────────────────────────────────────────────────────
+// `kind` controls call-generation for the seed dataset only. The final
+// Campaign.status written into JSON is just 'active' | 'inactive':
+//   running   → active (currently dialing)
+//   scheduled → active (live but waiting for startsAt)
+//   completed → inactive (finished)
+//   draft     → inactive (never started)
 const CAMPAIGN_TEMPLATES = [
-  // active (5)
-  { name: 'EMI Reminder — April 2026', agent: 'agent_emi_reminder', status: 'active', base: 2100 },
-  { name: 'Loan Recovery — 30 DPD', agent: 'agent_loan_recovery', status: 'active', base: 920 },
-  { name: 'Loan Recovery — 60 DPD', agent: 'agent_loan_recovery', status: 'active', base: 460 },
-  { name: 'KYC Pending — Personal Loan', agent: 'agent_application_status', status: 'active', base: 670 },
-  { name: 'EMI Reminder — Premium Tier', agent: 'agent_emi_reminder', status: 'active', base: 340 },
+  // running (5)
+  { name: 'EMI Reminder — April 2026',          agent: 'agent_emi_reminder',      kind: 'running',   base: 2100 },
+  { name: 'Loan Recovery — 30 DPD',             agent: 'agent_loan_recovery',     kind: 'running',   base: 920 },
+  { name: 'Loan Recovery — 60 DPD',             agent: 'agent_loan_recovery',     kind: 'running',   base: 460 },
+  { name: 'KYC Pending — Personal Loan',        agent: 'agent_application_status',kind: 'running',   base: 670 },
+  { name: 'EMI Reminder — Premium Tier',        agent: 'agent_emi_reminder',      kind: 'running',   base: 340 },
   // completed (15)
-  { name: 'EMI Reminder — March 2026', agent: 'agent_emi_reminder', status: 'completed', base: 2090 },
-  { name: 'EMI Reminder — February 2026', agent: 'agent_emi_reminder', status: 'completed', base: 1975 },
-  { name: 'Loan Recovery — Q1 2026 Sweep', agent: 'agent_loan_recovery', status: 'completed', base: 1115 },
-  { name: 'Application Status — Feb intake', agent: 'agent_application_status', status: 'completed', base: 810 },
-  { name: 'KYC Pending — Personal Loan (Jan)', agent: 'agent_application_status', status: 'completed', base: 740 },
-  { name: 'KYC Pending — Auto Loan (Feb)', agent: 'agent_application_status', status: 'completed', base: 380 },
-  { name: 'Loan Recovery — 90+ DPD Q1', agent: 'agent_loan_recovery', status: 'completed', base: 270 },
-  { name: 'Renewal Outreach — Personal Loan', agent: 'agent_application_status', status: 'completed', base: 440 },
-  { name: 'Document Reminder — Income Proof', agent: 'agent_application_status', status: 'completed', base: 310 },
-  { name: 'EMI Bounce Recovery — March', agent: 'agent_loan_recovery', status: 'completed', base: 560 },
-  { name: 'Cross-Sell — Top-up Loans', agent: 'agent_application_status', status: 'completed', base: 725 },
-  { name: 'Welcome Calls — New Disbursements (Jan)', agent: 'agent_application_status', status: 'completed', base: 360 },
-  { name: 'Welcome Calls — New Disbursements (Feb)', agent: 'agent_application_status', status: 'completed', base: 405 },
-  { name: 'Festival Top-up Offer — Holi 2026', agent: 'agent_application_status', status: 'completed', base: 1200 },
-  { name: 'NPA Restructure Outreach — Q4 2025', agent: 'agent_loan_recovery', status: 'completed', base: 190 },
-  // scheduled (3)
-  { name: 'EMI Reminder — May 2026', agent: 'agent_emi_reminder', status: 'scheduled', base: 2155 },
-  { name: 'KYC Pending — Q2 sweep', agent: 'agent_application_status', status: 'scheduled', base: 590 },
-  { name: 'Cross-Sell — Pre-approved Top-up (May)', agent: 'agent_application_status', status: 'scheduled', base: 1025 },
+  { name: 'EMI Reminder — March 2026',          agent: 'agent_emi_reminder',      kind: 'completed', base: 2090 },
+  { name: 'EMI Reminder — February 2026',       agent: 'agent_emi_reminder',      kind: 'completed', base: 1975 },
+  { name: 'Loan Recovery — Q1 2026 Sweep',      agent: 'agent_loan_recovery',     kind: 'completed', base: 1115 },
+  { name: 'Application Status — Feb intake',    agent: 'agent_application_status',kind: 'completed', base: 810 },
+  { name: 'KYC Pending — Personal Loan (Jan)',  agent: 'agent_application_status',kind: 'completed', base: 740 },
+  { name: 'KYC Pending — Auto Loan (Feb)',      agent: 'agent_application_status',kind: 'completed', base: 380 },
+  { name: 'Loan Recovery — 90+ DPD Q1',         agent: 'agent_loan_recovery',     kind: 'completed', base: 270 },
+  { name: 'Renewal Outreach — Personal Loan',   agent: 'agent_application_status',kind: 'completed', base: 440 },
+  { name: 'Document Reminder — Income Proof',   agent: 'agent_application_status',kind: 'completed', base: 310 },
+  { name: 'EMI Bounce Recovery — March',        agent: 'agent_loan_recovery',     kind: 'completed', base: 560 },
+  { name: 'Cross-Sell — Top-up Loans',          agent: 'agent_application_status',kind: 'completed', base: 725 },
+  { name: 'Welcome Calls — New Disbursements (Jan)', agent: 'agent_application_status', kind: 'completed', base: 360 },
+  { name: 'Welcome Calls — New Disbursements (Feb)', agent: 'agent_application_status', kind: 'completed', base: 405 },
+  { name: 'Festival Top-up Offer — Holi 2026',  agent: 'agent_application_status',kind: 'completed', base: 1200 },
+  { name: 'NPA Restructure Outreach — Q4 2025', agent: 'agent_loan_recovery',     kind: 'completed', base: 190 },
+  // scheduled (3) — active in status, but startsAt is in the future
+  { name: 'EMI Reminder — May 2026',            agent: 'agent_emi_reminder',      kind: 'scheduled', base: 2155 },
+  { name: 'KYC Pending — Q2 sweep',             agent: 'agent_application_status',kind: 'scheduled', base: 590 },
+  { name: 'Cross-Sell — Pre-approved Top-up (May)', agent: 'agent_application_status', kind: 'scheduled', base: 1025 },
   // draft (2)
-  { name: 'EMI Reminder — Premium Tier (Draft)', agent: 'agent_emi_reminder', status: 'draft', base: 0 },
-  { name: 'Recovery — Hardship Cases (Draft)', agent: 'agent_loan_recovery', status: 'draft', base: 0 },
+  { name: 'EMI Reminder — Premium Tier (Draft)', agent: 'agent_emi_reminder',     kind: 'draft',     base: 0 },
+  { name: 'Recovery — Hardship Cases (Draft)',  agent: 'agent_loan_recovery',     kind: 'draft',     base: 0 },
 ];
 
 // Anchor "today" deterministically: 2026-04-30
@@ -258,15 +266,15 @@ function makeContactList(name, base) {
   };
 }
 
-function makeMetrics(base, status) {
-  if (status === 'draft') {
+function makeMetrics(base, kind) {
+  if (kind === 'draft') {
     return zeroMetrics();
   }
-  if (status === 'scheduled') {
+  if (kind === 'scheduled') {
     return zeroMetrics(base);
   }
-  // For active/completed: simulate funnel.
-  const initiatedRate = status === 'completed' ? 1 : 0.45 + rnd() * 0.4;
+  // For running/completed: simulate funnel.
+  const initiatedRate = kind === 'completed' ? 1 : 0.45 + rnd() * 0.4;
   const initiated = Math.round(base * initiatedRate);
   const connectedRate = 0.78 + rnd() * 0.1;
   const connected = Math.round(initiated * connectedRate);
@@ -297,25 +305,131 @@ function zeroMetrics(baseUploaded = 0) {
   };
 }
 
+/*
+ * Pick a sensible goal for a campaign based on its name and kind.
+ * Active + recent completed campaigns get goals so the Goal card
+ * lights up across the demo. Draft / scheduled campaigns don't.
+ */
+function makeGoal(name, kind) {
+  if (kind === 'draft' || kind === 'scheduled') return undefined;
+  // Skip ~30% of completed campaigns so the demo has a mix of "with"
+  // and "without" goal cases.
+  if (kind === 'completed' && rnd() < 0.3) return undefined;
+
+  const lower = name.toLowerCase();
+  if (lower.includes('emi reminder') || lower.includes('emi bounce')) {
+    return {
+      description: 'Lock in payment commitments before the EMI due date.',
+      targetIntent: 'payment_promised',
+    };
+  }
+  if (lower.includes('loan recovery') || lower.includes('npa') || lower.includes('restructure')) {
+    return {
+      description: 'Recover dues — get the customer to commit to repayment or restructuring.',
+      targetIntent: 'payment_promised',
+    };
+  }
+  if (lower.includes('kyc')) {
+    return {
+      description: 'Drive KYC completion live on the call so disbursals can move forward.',
+      targetIntent: 'kyc_completed_on_call',
+    };
+  }
+  if (lower.includes('application status')) {
+    return {
+      description: 'Reach every applicant and close out pending documentation.',
+      targetIntent: 'documents_requested',
+    };
+  }
+  if (lower.includes('cross-sell') || lower.includes('top-up') || lower.includes('renewal') || lower.includes('festival')) {
+    return {
+      description: 'Surface qualified leads ready to apply for follow-up.',
+      targetIntent: 'application_submitted',
+    };
+  }
+  if (lower.includes('document reminder')) {
+    return {
+      description: 'Get pending documents off the customer.',
+      targetIntent: 'documents_requested',
+    };
+  }
+  if (lower.includes('welcome')) {
+    return {
+      description: 'Onboard new disbursements with a positive welcome call.',
+      targetIntent: 'interested_will_apply',
+    };
+  }
+  return {
+    description: 'Resolve customer queries and capture next steps.',
+    targetIntent: 'call_me_later',
+  };
+}
+
+/*
+ * Pick the feedback intents (post-call outcomes) that an operator would
+ * most likely want to track for this campaign type. The goal target is
+ * always one of them; we add a few related ones for richer dashboards.
+ */
+function makeFeedbackIntents(name, kind, goal) {
+  if (kind === 'draft' || kind === 'scheduled') return undefined;
+  if (kind === 'completed' && rnd() < 0.4) return undefined;
+
+  const lower = name.toLowerCase();
+  const out = new Set();
+  if (goal?.targetIntent) out.add(goal.targetIntent);
+
+  if (lower.includes('emi reminder') || lower.includes('emi bounce') || lower.includes('loan recovery') || lower.includes('npa') || lower.includes('restructure')) {
+    out.add('payment_promised');
+    out.add('payment_already_done');
+    out.add('call_me_later');
+    out.add('complaint_raised');
+  } else if (lower.includes('kyc')) {
+    out.add('kyc_completed_on_call');
+    out.add('documents_requested');
+    out.add('requesting_branch_visit');
+    out.add('call_me_later');
+  } else if (lower.includes('cross-sell') || lower.includes('top-up') || lower.includes('renewal') || lower.includes('festival') || lower.includes('welcome')) {
+    out.add('application_submitted');
+    out.add('interested_will_apply');
+    out.add('call_me_later');
+    out.add('not_interested');
+  } else if (lower.includes('application status')) {
+    out.add('documents_requested');
+    out.add('application_submitted');
+    out.add('call_me_later');
+  } else if (lower.includes('document')) {
+    out.add('documents_requested');
+    out.add('call_me_later');
+  } else {
+    out.add('call_me_later');
+    out.add('not_interested');
+  }
+  return [...out];
+}
+
 const campaigns = CAMPAIGN_TEMPLATES.map((tpl, i) => {
   const id = `camp_${String(i + 1).padStart(3, '0')}`;
-  const status = tpl.status;
-  const metrics = makeMetrics(tpl.base, status);
+  const kind = tpl.kind;
+  // Final UI-facing status: binary.
+  //   running / scheduled → active
+  //   completed / draft   → inactive
+  const status = (kind === 'running' || kind === 'scheduled') ? 'active' : 'inactive';
+  const metrics = makeMetrics(tpl.base, kind);
   const contactList = makeContactList(tpl.name, tpl.base);
 
   let createdAt, startedAt, completedAt, schedule;
-  if (status === 'completed') {
+  if (kind === 'completed') {
     const start = randInt(45, 90);
     createdAt = isoDaysAgo(start + 2);
     startedAt = isoDaysAgo(start);
     completedAt = isoDaysAgo(start - randInt(2, 7));
     schedule = { type: 'immediate', timezone: 'Asia/Kolkata' };
-  } else if (status === 'active') {
+  } else if (kind === 'running') {
     const start = randInt(2, 14);
     createdAt = isoDaysAgo(start + 1);
     startedAt = isoDaysAgo(start);
     schedule = { type: 'immediate', timezone: 'Asia/Kolkata' };
-  } else if (status === 'scheduled') {
+  } else if (kind === 'scheduled') {
     createdAt = isoDaysAgo(randInt(1, 6));
     schedule = {
       type: 'scheduled',
@@ -327,21 +441,24 @@ const campaigns = CAMPAIGN_TEMPLATES.map((tpl, i) => {
     schedule = { type: 'immediate', timezone: 'Asia/Kolkata' };
   }
 
+  const goal = makeGoal(tpl.name, kind);
   return {
     id,
     workspaceId: 'ws_volt',
     name: tpl.name,
-    description:
-      status === 'draft' ? undefined : `${tpl.name} — outbound voice campaign for ${workspace.name}.`,
     voiceAgentId: tpl.agent,
     status,
     contactList,
     schedule,
     metrics,
+    goal,
+    feedbackIntents: makeFeedbackIntents(tpl.name, kind, goal),
     createdBy: 'user_001',
     createdAt,
     startedAt,
     completedAt,
+    // Internal-only — drives call generation. Stripped before write.
+    _kind: kind,
   };
 });
 
@@ -412,128 +529,150 @@ function transcriptFor(intent, agentName, customer, attrs) {
 
   const middle = [];
   switch (intent) {
-    case 'emi_status':
-    case 'payment_promise':
-    case 'repayment_intent':
+    case 'kyc_completed_on_call':
       middle.push(
-        { text: `I am calling about the EMI of ${attrs.amount} due on ${attrs.due}. Just confirming if you'll be able to pay on time.`, role: 'agent' },
+        { text: 'Your loan application is approved pending KYC. We can complete it right now over this call. Shall we proceed?', role: 'agent' },
         pick([
-          { text: 'Yes, the funds are arranged. I will pay tomorrow itself.', role: 'customer' },
-          { text: 'I am facing some issues this month. Can I get a few extra days?', role: 'customer' },
-          { text: 'I can pay only half this month. Is that an option?', role: 'customer' },
-          { text: 'Already paid yesterday. Please check on your end.', role: 'customer' },
+          { text: 'Yes please, let us do it now.', role: 'customer' },
+          { text: 'Sure, what do you need from me?', role: 'customer' },
         ]),
-        { text: 'Understood. Let me note that for our records. Would you like an SMS reminder a day before?', role: 'agent' },
-        pick([
-          { text: 'Yes please, an SMS would help.', role: 'customer' },
-          { text: 'No need, I have it on my calendar.', role: 'customer' },
-          { text: 'Yes and a WhatsApp message too if possible.', role: 'customer' },
-        ]),
+        { text: 'Great. Could you confirm your name as on PAN, and read out the last 4 digits of the Aadhaar?', role: 'agent' },
+        { text: 'Yes — name matches. Last four are 4-3-2-1.', role: 'customer' },
+        { text: 'Thank you. KYC is now marked complete on our side. You will get a confirmation SMS shortly.', role: 'agent' },
       );
       break;
-    case 'loan_inquiry':
-    case 'renewal_inquiry':
+    case 'application_submitted':
       middle.push(
-        { text: `I see you have shown interest in our top-up loan offer of ${attrs.amount}. Would you like me to walk you through the terms?`, role: 'agent' },
+        { text: `Based on the eligibility I just checked, you qualify for ${attrs.amount}. Would you like to submit the application now?`, role: 'agent' },
+        { text: 'Yes, I want to go ahead.', role: 'customer' },
+        { text: 'I will lock the rate at 10.49% reducing and submit the form on your behalf. Confirming all details on file are correct?', role: 'agent' },
+        { text: 'Correct. Please go ahead.', role: 'customer' },
+        { text: 'Application submitted. You will receive an SMS with the application reference and next steps.', role: 'agent' },
+      );
+      break;
+    case 'interested_will_apply':
+      middle.push(
+        { text: `I see you have shown interest in our loan offer up to ${attrs.amount}. Would you like me to walk you through the terms?`, role: 'agent' },
         pick([
           { text: 'Yes, what is the interest rate? And how long is the tenure?', role: 'customer' },
-          { text: 'I am interested but I want to compare with my bank first.', role: 'customer' },
-          { text: 'Not right now. Maybe in a couple of months.', role: 'customer' },
+          { text: 'I am interested but want to compare with my bank first.', role: 'customer' },
         ]),
-        { text: 'Of course. Our current rate starts at 11.5% with tenures up to 60 months. I can email the full sheet right after this call.', role: 'agent' },
-        pick([
-          { text: 'Please email it. I will look at it tonight.', role: 'customer' },
-          { text: 'Great, send it across. I might apply by next week.', role: 'customer' },
-        ]),
+        { text: 'Of course. Current rate starts at 11.5% reducing with tenures up to 60 months. I can email the full sheet right after this call.', role: 'agent' },
+        { text: 'Please email it, I will look at it tonight and apply by next week.', role: 'customer' },
       );
       break;
-    case 'kyc_pending':
+    case 'call_me_later':
       middle.push(
-        { text: 'Your loan application is approved pending KYC. Could you complete it today using the link we will send?', role: 'agent' },
+        { text: 'Could I take five minutes to walk you through the details?', role: 'agent' },
         pick([
-          { text: 'I tried earlier but the link did not work. Please send a fresh one.', role: 'customer' },
-          { text: 'Okay, I will do it tonight.', role: 'customer' },
-          { text: 'Can someone come home? I am not comfortable with online KYC.', role: 'customer' },
+          { text: 'I am driving right now, can you call me back at 6pm?', role: 'customer' },
+          { text: 'In a meeting. Please try tomorrow morning.', role: 'customer' },
+          { text: 'Not a good time. Call me later this week.', role: 'customer' },
         ]),
-        { text: 'Sure, I am sending a new SMS link now. It expires in 24 hours.', role: 'agent' },
+        { text: 'No problem at all. I will schedule a callback as you mentioned. Thank you for your time today.', role: 'agent' },
       );
       break;
-    case 'application_status':
+    case 'not_interested':
       middle.push(
-        { text: 'Calling about your loan application submitted on the 22nd. We have everything except your latest salary slip.', role: 'agent' },
+        { text: 'I would love to share why this might be a good fit. Just 30 seconds?', role: 'agent' },
         pick([
-          { text: 'I uploaded it yesterday. Can you check again?', role: 'customer' },
-          { text: 'Got it, I will share it on WhatsApp now.', role: 'customer' },
-          { text: 'Why is this taking so long? It has been three weeks.', role: 'customer' },
+          { text: 'I appreciate it but I am not looking for a loan right now.', role: 'customer' },
+          { text: 'I already have a loan with another bank, I am not interested.', role: 'customer' },
+          { text: 'Honestly, please don\'t call me about this anymore.', role: 'customer' },
         ]),
-        { text: 'I will follow up internally and update you by EOD. Thank you for your patience.', role: 'agent' },
+        { text: 'Understood, thank you for letting me know. I will note it on your account.', role: 'agent' },
       );
       break;
-    case 'callback_request':
+    case 'payment_promised':
       middle.push(
-        { text: 'I see you requested a callback yesterday. How can I help you today?', role: 'agent' },
+        { text: `Calling about the EMI of ${attrs.amount} due on ${attrs.due}. Will you be able to pay on time?`, role: 'agent' },
         pick([
-          { text: 'Yes, I want to know my outstanding amount.', role: 'customer' },
-          { text: 'I had asked about prepayment charges.', role: 'customer' },
-          { text: 'Actually I missed why I requested it. Let me think.', role: 'customer' },
+          { text: 'Yes, the funds are arranged. I will pay by tomorrow.', role: 'customer' },
+          { text: 'I can pay half this month and the rest by next week.', role: 'customer' },
         ]),
+        { text: 'Noted. I have recorded your commitment. Would you like an SMS reminder a day before?', role: 'agent' },
+        { text: 'Yes please, an SMS would help.', role: 'customer' },
       );
       break;
-    case 'document_request':
+    case 'payment_already_done':
       middle.push(
-        { text: 'We need your latest salary slip and Aadhaar copy to proceed.', role: 'agent' },
+        { text: `Calling about the EMI of ${attrs.amount} due on ${attrs.due}.`, role: 'agent' },
+        { text: 'I already paid yesterday morning. Please check on your end.', role: 'customer' },
+        { text: `Let me verify... yes, I can see ${attrs.amount} credited yesterday. Apologies for the duplicate reminder.`, role: 'agent' },
+        { text: 'No problem, thank you for confirming.', role: 'customer' },
+      );
+      break;
+    case 'documents_requested':
+      middle.push(
+        { text: 'To proceed we still need your latest salary slip and Aadhaar copy.', role: 'agent' },
         pick([
           { text: 'I can WhatsApp them right now.', role: 'customer' },
-          { text: 'Please send the email ID where I should attach them.', role: 'customer' },
+          { text: 'Please share the email ID where I should attach them.', role: 'customer' },
         ]),
+        { text: 'I will share the official handle by SMS now. Acknowledgement comes within 24 hours.', role: 'agent' },
       );
       break;
-    case 'balance_inquiry':
+    case 'complaint_raised':
       middle.push(
-        { text: `Your outstanding principal is ${attrs.amount} as of today. Anything else?`, role: 'agent' },
         pick([
-          { text: 'When is my next EMI due?', role: 'customer' },
-          { text: 'Can you email a statement?', role: 'customer' },
+          { text: 'I was charged a late fee but I had paid on time! Please refund.', role: 'customer' },
+          { text: 'My EMI got debited twice this month, this is the third time it has happened.', role: 'customer' },
         ]),
+        { text: 'I am very sorry for the trouble. Let me raise a ticket and have our resolution team contact you within 48 hours.', role: 'agent' },
+        { text: 'Please make sure it is resolved this time.', role: 'customer' },
       );
       break;
-    case 'complaint':
-    case 'dispute_charge':
+    case 'not_eligible':
       middle.push(
+        { text: 'Let me quickly check your eligibility... I am sorry, based on the latest profile our system has flagged this for review.', role: 'agent' },
         pick([
-          { text: 'I was charged a late fee but I had paid on time!', role: 'customer' },
-          { text: 'My EMI got debited twice this month, please refund.', role: 'customer' },
+          { text: 'Why? I had qualified before.', role: 'customer' },
+          { text: 'Can someone review it manually?', role: 'customer' },
         ]),
-        { text: 'I am sorry for the trouble. Let me raise a ticket and have the resolution team contact you in 48 hours.', role: 'agent' },
-        pick([
-          { text: 'Please make sure it is resolved this time.', role: 'customer' },
-          { text: 'Thank you, I will wait.', role: 'customer' },
-        ]),
+        { text: 'I will request a manual review and someone will get back to you within 3 working days.', role: 'agent' },
       );
       break;
-    case 'financial_hardship':
+    case 'requesting_branch_visit':
       middle.push(
-        { text: 'I understand you are going through a tough time. We can offer a 30-day grace or restructure the EMI. Which works better?', role: 'agent' },
-        pick([
-          { text: 'Restructuring would help me a lot. Can you reduce the EMI?', role: 'customer' },
-          { text: 'Just the 30-day grace for now, thank you.', role: 'customer' },
-        ]),
-        { text: 'Noted. I will share the formal restructure proposal by tomorrow.', role: 'agent' },
+        { text: 'We can complete the entire process over this call. Shall we proceed?', role: 'agent' },
+        { text: 'Honestly, I prefer to walk into the branch. I am not comfortable with phone or online for this.', role: 'customer' },
+        { text: 'Of course. Your nearest branch is open 10 to 5, Monday to Saturday. I will SMS you the address.', role: 'agent' },
+        { text: 'Thank you, I will visit this week.', role: 'customer' },
       );
       break;
     case 'wrong_number':
       middle.push(
         pick([
           { text: 'I think you have the wrong person. I do not have any loan with Volt Money.', role: 'customer' },
-          { text: 'Sorry, this number was previously someone else’s.', role: 'customer' },
+          { text: 'Sorry, this number was previously someone else\'s.', role: 'customer' },
         ]),
-        { text: 'Apologies for the inconvenience. I will remove this number from our list.', role: 'agent' },
+        { text: 'Apologies for the inconvenience. I will remove this number from our list right away.', role: 'agent' },
       );
       break;
-    case 'agent_handoff_request':
+    case 'dnd_requested':
       middle.push(
-        { text: 'I would prefer to speak to a human agent please.', role: 'customer' },
-        { text: 'Of course. I will transfer you to our customer success team right away.', role: 'agent' },
+        { text: 'I want to share details about a pre-approved offer.', role: 'agent' },
+        { text: 'Please put me on Do Not Disturb. I do not want any more calls about this.', role: 'customer' },
+        { text: 'Absolutely, I will mark your number as DND immediately. You will not receive any further calls.', role: 'agent' },
+      );
+      break;
+    case 'transferred_to_human':
+      middle.push(
+        pick([
+          { text: 'I would prefer to speak to a human agent please, this is sensitive.', role: 'customer' },
+          { text: 'Can you connect me to your manager? I have a specific concern.', role: 'customer' },
+        ]),
+        { text: 'Of course. Connecting you to our customer success team now, please hold for a moment.', role: 'agent' },
+      );
+      break;
+    case 'customer_unavailable':
+      middle.push(
+        { text: 'Hello, am I speaking with the right person?', role: 'agent' },
+        pick([
+          { text: 'I cannot talk right now, will you call back later?', role: 'customer' },
+          { text: 'Sorry, I am stepping into a meeting.', role: 'customer' },
+        ]),
+        { text: 'Of course, I will try again later. Thank you.', role: 'agent' },
       );
       break;
     default:
@@ -558,10 +697,16 @@ function transcriptFor(intent, agentName, customer, attrs) {
 
 function entitiesFromAttrs(insightsAttrs, intent, transcript) {
   const out = [];
-  if (['emi_status', 'payment_promise', 'repayment_intent', 'loan_inquiry', 'renewal_inquiry', 'balance_inquiry'].includes(intent)) {
+  const moneyIntents = [
+    'application_submitted',
+    'interested_will_apply',
+    'payment_promised',
+    'payment_already_done',
+  ];
+  if (moneyIntents.includes(intent)) {
     out.push({
       type: 'amount',
-      label: intent === 'balance_inquiry' ? 'Outstanding' : 'Loan amount',
+      label: 'Loan amount',
       value: insightsAttrs.amount,
       turnIndex: Math.min(2, transcript.length - 1),
     });
@@ -572,15 +717,15 @@ function entitiesFromAttrs(insightsAttrs, intent, transcript) {
       turnIndex: Math.min(2, transcript.length - 1),
     });
   }
-  if (intent === 'kyc_pending') {
-    out.push({ type: 'reference', label: 'KYC link', value: 'sms-pending', turnIndex: 4 });
+  if (intent === 'kyc_completed_on_call') {
+    out.push({ type: 'reference', label: 'KYC reference', value: 'KYC-' + randInt(100000, 999999), turnIndex: 4 });
   }
   return out;
 }
 
 function toolCallsFor(intent, transcript) {
   const out = [];
-  if (intent === 'balance_inquiry' || intent === 'emi_status') {
+  if (intent === 'payment_already_done' || intent === 'payment_promised') {
     out.push({
       name: 'lookup_loan_status',
       argsPreview: '{ "customer_id": "cust_abc123" }',
@@ -590,27 +735,164 @@ function toolCallsFor(intent, transcript) {
       turnIndex: 2,
     });
   }
-  if (intent === 'kyc_pending') {
+  if (intent === 'kyc_completed_on_call') {
     out.push({
-      name: 'send_kyc_sms',
-      argsPreview: '{ "customer_id": "cust_abc123", "channel": "sms" }',
-      resultPreview: '{ "delivered": true, "message_id": "msg_xyz" }',
+      name: 'mark_kyc_complete',
+      argsPreview: '{ "customer_id": "cust_abc123", "method": "voice_otp" }',
+      resultPreview: '{ "kyc_status": "complete", "ref": "KYC-' + randInt(100000, 999999) + '" }',
       durationMs: randInt(220, 460),
       status: 'success',
       turnIndex: 4,
     });
   }
-  if (intent === 'complaint' || intent === 'dispute_charge') {
+  if (intent === 'application_submitted') {
+    out.push({
+      name: 'submit_loan_application',
+      argsPreview: '{ "customer_id": "cust_abc123", "amount": 250000, "tenure_months": 60 }',
+      resultPreview: '{ "application_id": "APP-' + randInt(100000, 999999) + '", "status": "submitted" }',
+      durationMs: randInt(280, 520),
+      status: 'success',
+      turnIndex: 4,
+    });
+  }
+  if (intent === 'complaint_raised') {
     out.push({
       name: 'create_ticket',
       argsPreview: '{ "category": "billing_dispute", "priority": "high" }',
-      resultPreview: '{ "ticket_id": "TKT-44219", "sla_hours": 48 }',
+      resultPreview: '{ "ticket_id": "TKT-' + randInt(40000, 49999) + '", "sla_hours": 48 }',
       durationMs: randInt(180, 350),
       status: 'success',
       turnIndex: 3,
     });
   }
+  if (intent === 'dnd_requested') {
+    out.push({
+      name: 'add_to_dnd',
+      argsPreview: '{ "phone": "+91XXXXXXXXXX", "reason": "customer_request" }',
+      resultPreview: '{ "added": true }',
+      durationMs: randInt(120, 260),
+      status: 'success',
+      turnIndex: 2,
+    });
+  }
   return out;
+}
+
+/*
+ * LLM-style call summaries — templated by intent + sentiment + outcome.
+ * Substitutes the actual call attributes (name, amount, due) so each
+ * summary reads like a unique paraphrase rather than canned copy.
+ */
+const SUMMARY_TEMPLATES = {
+  kyc_completed_on_call: [
+    "{name} completed KYC live on the call by confirming PAN and Aadhaar last-four. KYC marked complete and SMS confirmation sent.",
+    "Customer ({name}) walked through voice-OTP KYC and was verified successfully during the call. No further documentation needed.",
+  ],
+  application_submitted: [
+    "{name} accepted the {amount} eligibility check and submitted the loan application live on the call. Application reference shared via SMS.",
+    "Customer ({name}) confirmed personal details and authorised submission of a {amount} application at 10.49% reducing. Submission successful.",
+  ],
+  interested_will_apply: [
+    "{name} expressed interest in a loan up to {amount}. Agent shared current rate and tenure; customer asked for an email and plans to apply this week.",
+    "Customer ({name}) wants to compare with their bank before deciding. Agent emailed the rate sheet and noted the customer for a 7-day follow-up.",
+  ],
+  call_me_later: [
+    "{name} could not talk now and asked for a callback later in the day. Callback scheduled and noted on the account.",
+    "Customer ({name}) was in a meeting; requested a fresh attempt tomorrow morning. Reschedule recorded.",
+  ],
+  not_interested: [
+    "{name} explicitly declined the offer; said they already have a loan elsewhere. Marked as not interested for the next 90 days.",
+    "Customer ({name}) was polite but firmly not interested. Disinterest recorded; suppression cooldown applied.",
+  ],
+  payment_promised: [
+    "{name} promised to pay the EMI of {amount} (due on {due}) within 48 hours. Commitment recorded; SMS reminder scheduled a day before.",
+    "Customer ({name}) committed to a partial payment this month with the balance by month-end. Staggered plan captured on the account.",
+  ],
+  payment_already_done: [
+    "{name} reported the EMI of {amount} was paid yesterday. Agent verified the credit on their end and apologised for the duplicate reminder.",
+    "Customer ({name}) confirmed payment of {amount} was already cleared. Agent updated the call log to reflect the verified status.",
+  ],
+  documents_requested: [
+    "{name} agreed to share the salary slip and Aadhaar via WhatsApp immediately. Official handle shared; acknowledgement window of 24 hours communicated.",
+    "Customer ({name}) requested the documents email; agent shared it on the call and committed to a 24-hour acknowledgement.",
+  ],
+  complaint_raised: [
+    "{name} raised a complaint about a recurring late-fee charge despite on-time payment. Agent created ticket {ticket} for resolution within 48 hours.",
+    "Customer ({name}) reported a duplicate EMI debit. Agent escalated for billing review; SLA of 48 hours communicated.",
+  ],
+  not_eligible: [
+    "{name}'s eligibility check flagged a manual review based on the latest profile. Agent committed to a 3-day follow-up after underwriter review.",
+    "Customer ({name}) didn't meet automated eligibility this round. Manual-review request raised on the account.",
+  ],
+  requesting_branch_visit: [
+    "{name} preferred an in-branch experience over a phone-led flow. Branch address and timings shared via SMS; customer plans to visit this week.",
+    "Customer ({name}) was uncomfortable completing the process online. Agent suggested the nearest branch and SMS'd the address.",
+  ],
+  wrong_number: [
+    "Reached the wrong recipient; the number is no longer associated with the customer. Contact removed from the active list.",
+    "{name} confirmed they have no loan with Volt Money. Agent apologised and updated the suppression list.",
+  ],
+  dnd_requested: [
+    "{name} explicitly requested DND. Number marked as DND across all outreach channels.",
+    "Customer ({name}) asked to stop all calls. DND added to the account; further outreach blocked.",
+  ],
+  transferred_to_human: [
+    "Customer ({name}) preferred to speak with a human agent. Call cleanly handed off to the customer success queue.",
+    "{name} requested live agent assistance for a sensitive concern. Transferred to a senior team member.",
+  ],
+  customer_unavailable: [
+    "{name} couldn't take the call right now and the conversation didn't progress. Agent will retry per campaign retry policy.",
+    "Customer ({name}) stepped into a meeting. Call ended without engagement; flagged for retry.",
+  ],
+};
+
+function buildSummary(intent, name, amountFmt, dueDate) {
+  const templates = SUMMARY_TEMPLATES[intent];
+  if (!templates || templates.length === 0) {
+    return `Customer ${name} engaged with the agent and the call ended cleanly.`;
+  }
+  const tpl = templates[Math.floor(rnd() * templates.length)];
+  return tpl
+    .replace(/\{name\}/g, name)
+    .replace(/\{amount\}/g, amountFmt)
+    .replace(/\{due\}/g, dueDate)
+    .replace(/\{ticket\}/g, `TKT-${randInt(40000, 49999)}`);
+}
+
+/*
+ * In-progress call — the dialer is connected and the agent is talking
+ * to the customer right now. No transcript / insights / duration yet
+ * (they're populated when the call ends). Lives only on running
+ * campaigns, with an `initiatedAt` in the last few minutes.
+ */
+function makeInProgressCall(campaign, agent, idx) {
+  const id = `call_${campaign.id}_inp_${String(idx).padStart(5, '0')}`;
+  const phone = indianPhone();
+  const fullName = customerName();
+  const minutesAgo = randInt(0, 12);
+  const initiatedAt = new Date(NOW - minutesAgo * 60_000).toISOString();
+  return {
+    id,
+    workspaceId: 'ws_volt',
+    campaignId: campaign.id,
+    voiceAgentId: agent.id,
+    phoneNumber: phone,
+    customerName: fullName,
+    contactAttributes: {
+      customer_name: fullName,
+      loan_amount: String(moneyAmount()),
+      due_date: dueDate(),
+    },
+    initiatedAt,
+    connectedAt: initiatedAt,
+    answeredAt: initiatedAt,
+    duration: 0,
+    status: 'in_progress',
+    reviewed: false,
+    flagged: false,
+    tags: [],
+    cost: 0,
+  };
 }
 
 function makeCall(campaign, agent, idx, dayOffset) {
@@ -729,6 +1011,7 @@ function makeCall(campaign, agent, idx, dayOffset) {
   );
 
   const outcome = pick(OUTCOMES_BY_INTENT[intent] ?? ['no_resolution']);
+  const summary = buildSummary(intent, fullName, insightsAttrs.amount, insightsAttrs.due);
 
   return {
     id,
@@ -757,6 +1040,7 @@ function makeCall(campaign, agent, idx, dayOffset) {
       sentimentScore: Math.round(sentimentScore * 100) / 100,
       sentimentByTurn: sentimentByTurn.map((v) => Math.round(v * 100) / 100),
       entities: _entities,
+      summary,
       outcome,
       toolCalls: toolCallsFor(intent, transcript),
     },
@@ -782,12 +1066,12 @@ const calls = [];
 const agentById = Object.fromEntries(voiceAgents.map((a) => [a.id, a]));
 
 for (const c of campaigns) {
-  if (c.status === 'draft' || c.status === 'scheduled') continue;
+  if (c._kind === 'draft' || c._kind === 'scheduled') continue;
   const target = c.metrics.callsInitiated;
   if (target === 0) continue;
   const agent = agentById[c.voiceAgentId];
 
-  const isCompleted = c.status === 'completed';
+  const isCompleted = c._kind === 'completed';
   // For completed, calls are spread across the campaign window.
   // For active, calls in the last 1–14 days, biased toward today.
   const completedStart = isCompleted ? Math.floor((NOW - new Date(c.startedAt).getTime()) / ONE_DAY) : null;
@@ -800,6 +1084,15 @@ for (const c of campaigns) {
       : (rnd() < 0.35 ? 0 : randInt(0, Math.max(1, activeStart)));
     calls.push(makeCall(c, agent, i + 1, dayOffset));
   }
+
+  // Sprinkle a handful of in-progress calls onto currently-running
+  // campaigns so the demo has live activity to display.
+  if (c._kind === 'running') {
+    const liveCount = randInt(2, 6);
+    for (let i = 0; i < liveCount; i++) {
+      calls.push(makeInProgressCall(c, agent, target + i + 1));
+    }
+  }
 }
 
 // Sort by initiatedAt desc — most recent first
@@ -807,10 +1100,12 @@ calls.sort((a, b) => (a.initiatedAt < b.initiatedAt ? 1 : -1));
 
 // ────────────────────────────────────────────────────────────────────
 // Re-derive campaign metrics from generated calls (accuracy)
+// In-progress calls don't count toward initiated/connected metrics.
 // ────────────────────────────────────────────────────────────────────
 for (const c of campaigns) {
-  if (c.status === 'draft' || c.status === 'scheduled') continue;
-  const myCalls = calls.filter((x) => x.campaignId === c.id);
+  if (c._kind === 'draft' || c._kind === 'scheduled') continue;
+  // Exclude in_progress calls from settled metrics — they're still mid-flight.
+  const myCalls = calls.filter((x) => x.campaignId === c.id && x.status !== 'in_progress');
   if (myCalls.length === 0) continue;
   const initiated = myCalls.length;
   const failed = myCalls.filter((x) => x.status === 'failed').length;
@@ -829,6 +1124,9 @@ for (const c of campaigns) {
     totalCost: Math.round(totalCost * 100) / 100,
   };
 }
+
+// Drop the internal-only `_kind` field before serialisation.
+for (const c of campaigns) delete c._kind;
 
 // ────────────────────────────────────────────────────────────────────
 // Write outputs

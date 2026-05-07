@@ -59,13 +59,14 @@ export function Logo({
           </g>
           <text
             x="50"
-            y="74"
+            y="52"
             textAnchor="middle"
-            fontSize="48"
-            fontWeight="700"
+            dominantBaseline="central"
+            fontSize="50"
+            fontWeight="800"
             fontFamily="Inter, ui-sans-serif, system-ui, sans-serif"
             fill="white"
-            letterSpacing="-2"
+            letterSpacing="-1.5"
           >
             Pi
           </text>
@@ -76,9 +77,7 @@ export function Logo({
           className={cn(
             'font-semibold tracking-[0.04em] leading-none whitespace-nowrap',
             s.word,
-            wordmarkColor === 'light'
-              ? 'text-white border-b border-blue-500/40 pb-0.5'
-              : 'text-text-primary',
+            wordmarkColor === 'light' ? 'text-white' : 'text-text-primary',
           )}
         >
           {wordmark}

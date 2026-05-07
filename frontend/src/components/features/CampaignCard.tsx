@@ -20,16 +20,14 @@ export function CampaignCard({ campaign, agent, workspace, className }: Props) {
 
   // Choose the most contextual relative timestamp.
   const relRef =
-    campaign.status === 'completed' ? campaign.completedAt :
-    campaign.status === 'scheduled' ? campaign.schedule.startsAt :
-    campaign.status === 'active'    ? campaign.startedAt :
-                                       campaign.createdAt;
+    campaign.status === 'inactive' ? campaign.completedAt ?? campaign.startedAt ?? campaign.createdAt :
+    campaign.status === 'active'   ? campaign.startedAt ?? campaign.schedule.startsAt ?? campaign.createdAt :
+                                      campaign.createdAt;
 
   const relPrefix =
-    campaign.status === 'completed' ? 'completed' :
-    campaign.status === 'scheduled' ? 'starts' :
-    campaign.status === 'active'    ? 'ran' :
-                                       'created';
+    campaign.status === 'inactive' ? 'paused' :
+    campaign.status === 'active'   ? 'started' :
+                                      'created';
 
   const connectedRate = m.callsInitiated > 0 ? m.callsConnected / m.callsInitiated : 0;
   const answeredRate = m.callsConnected > 0 ? m.callsAnswered / m.callsConnected : 0;

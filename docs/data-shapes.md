@@ -108,20 +108,103 @@ type CampaignMetrics = {
   totalCost: number;                // workspace currency
 };
 
+/**
+ * Campaign goal — captured at creation time. Two parts:
+ *   - description: free-text purpose of the campaign
+ *   - targetIntent: customer-side intent that counts as "goal met" for
+ *     a single answered call
+ *
+ * The Analytics page renders a Goal card showing
+ *   pct = count(answered calls where primaryIntent === targetIntent)
+ *         / count(answered calls)
+ */
+type CampaignGoal = {
+  description: string;
+  targetIntent: string;
+};
+
+type CampaignRunStatus =
+  | 'queued' | 'running' | 'completed' | 'paused' | 'failed';
+
+/**
+ * A campaign can be re-run against a fresh contact list at any time.
+ * Each execution is a CampaignRun. The initial launch is implicitly
+ * run #1 (its `contactList` and `schedule` live on the Campaign
+ * itself). Subsequent runs are appended to `campaign.runs[]`.
+ *
+ * The campaign's top-level `contactList` is updated to the most recent
+ * run's list (kept for backward compatibility with consumers that
+ * just want the latest cut). Aggregate metrics on the campaign sum
+ * across all runs.
+ */
+type CampaignRun = {
+  id: string;                       // 'run_xxx'
+  campaignId: string;
+  contactList: ContactList;
+  schedule: CampaignSchedule;
+  /** Snapshot of the retry policy in force when this run was started. */
+  retryPolicy: RetryPolicy;
+  startedAt: string;
+  startedBy: string;                // user id
+  status: CampaignRunStatus;
+};
+
+/**
+ * Retry policy — controls automatic re-dialing of calls that didn't
+ * connect cleanly. Maps user-facing categories to Plivo `hangup_cause`
+ * codes; see api-contracts.md for the full mapping table.
+ */
+type RetryPolicy = {
+  enabled: boolean;
+  /** Number of additional dial attempts on top of the first one. 1..5. */
+  maxAttempts: number;
+  /** Cooldown between attempts (minutes). */
+  intervalMinutes: number;
+  retryOn: {
+    /** Customer answered but call duration < shortAnswerThresholdSec. */
+    shortAnswer: boolean;
+    shortAnswerThresholdSec: number;     // default 5
+    /** No answer / rang out. Plivo: 3000, 6010. */
+    noAnswer: boolean;
+    /** Busy or carrier congestion. Plivo: 3010, 3100, 3090. */
+    busy: boolean;
+    /** Carrier or network error. Plivo: 3070, 3080, 5000, 6020. */
+    carrierError: boolean;
+    /** Voicemail / answering machine detected. Plivo: 9100. */
+    voicemail: boolean;
+  };
+};
+
 type Campaign = {
   id: string;                       // 'camp_001'
   workspaceId: string;
   name: string;
-  description?: string;
   voiceAgentId: string;
   status: CampaignStatus;
   contactList: ContactList;
   schedule: CampaignSchedule;
   metrics: CampaignMetrics;
+  /** Default retry policy applied to new runs. Optional — older
+   *  campaigns may not have one set; UI defaults to a sensible one. */
+  retryPolicy?: RetryPolicy;
+  /** Operator-defined success metric. Optional. */
+  goal?: CampaignGoal;
+  /**
+   * Subset of the intent vocabulary the operator wants to track for
+   * this campaign — the "feedback loop". Drives the Feedback Signals
+   * card on the Analytics page. Optional.
+   */
+  feedbackIntents?: string[];
   createdBy: string;                // user id
   createdAt: string;
   startedAt?: string;
   completedAt?: string;
+  /**
+   * Subsequent runs queued against this campaign after the initial
+   * launch. Optional — the initial launch (`contactList` + `schedule`
+   * above) is implicitly run #1.
+   */
+  runs?: CampaignRun[];
 };
 ```
 
@@ -226,9 +309,12 @@ type CallInsights = {
   secondaryIntents: string[];
   sentiment: 'positive' | 'neutral' | 'negative';
   sentimentScore: number;           // -1 to 1
-  sentimentByTurn: number[];        // one per turn
-  entities: Entity[];
-  outcome: string;                  // 'agreed_to_pay', 'callback_scheduled', etc.
+  sentimentByTurn: number[];        // one per turn (kept on the wire; no longer rendered)
+  entities: Entity[];               // kept on the wire; no longer rendered
+  /** 1–2 sentence LLM-generated paraphrase of the call. Replaces the
+   *  enum-style outcome label as the primary "what happened" surface. */
+  summary: string;
+  outcome: string;                  // managed-vocabulary tag, kept for analytics rollups
   toolCalls: ToolCall[];
 };
 
@@ -255,28 +341,33 @@ not.
 
 ---
 
-## Intent vocabulary (consumer lending)
+## Intent vocabulary (post-call outcomes)
 
-Stable enum — backend should treat these as a managed vocabulary, not free
-text.
+These are the labels the AI tags onto a call **after it ends**. Each
+value names what HAPPENED on the call, not what the customer asked
+about. Stable enum — backend should treat these as a managed
+vocabulary, not free text.
 
 ```
-loan_inquiry
-emi_status
-repayment_intent
-payment_promise
-kyc_pending
-application_status
-callback_request
-document_request
-balance_inquiry
-renewal_inquiry
-complaint
-dispute_charge
-financial_hardship
-wrong_number
-agent_handoff_request
+kyc_completed_on_call    KYC completed on call
+application_submitted    Application submitted
+interested_will_apply    Interested, will apply later
+call_me_later            Call me later
+not_interested           Not interested
+payment_promised         Payment promised
+payment_already_done     Payment already done
+documents_requested      Documents requested
+complaint_raised         Complaint raised
+not_eligible             Not eligible
+requesting_branch_visit  Wants to visit branch
+wrong_number             Wrong number
+dnd_requested            DND requested
+transferred_to_human     Transferred to human
+customer_unavailable     Customer unavailable
 ```
+
+The canonical UI labels live in
+[`frontend/src/lib/labels.ts`](../frontend/src/lib/labels.ts).
 
 ## Outcome vocabulary
 
@@ -294,6 +385,7 @@ full mapping.
 | User | `user_` | `user_001` |
 | Voice agent | `agent_` | `agent_loan_recovery` |
 | Campaign | `camp_` | `camp_001` |
+| Campaign run | `run_` | `run_lwxn7a3` |
 | Call | `call_` | `call_camp_001_00042` |
 | Tool call ticket | `TKT-` | `TKT-44219` |
 

@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
   X,
-  Flag,
-  CheckCircle2,
   Download,
   PhoneIncoming,
   PhoneMissed,
@@ -47,8 +45,6 @@ export function CallDetailDrawer({
   const [detail, setDetail] = useState<CallDetail | null | undefined>(undefined); // undefined = loading
   const [currentMs, setCurrentMs] = useState(0);
   const [playing, setPlaying] = useState(false);
-  const [reviewed, setReviewed] = useState(false);
-  const [flagged, setFlagged] = useState(false);
   const toast = useToast();
 
   // Reset whenever a new call is opened.
@@ -58,8 +54,6 @@ export function CallDetailDrawer({
     setDetail(undefined);
     setCurrentMs(0);
     setPlaying(false);
-    setReviewed(call.reviewed);
-    setFlagged(call.flagged);
 
     let cancelled = false;
     getCallDetail(workspace.id, call.id).then((d) => {
@@ -190,35 +184,10 @@ export function CallDetailDrawer({
 
       {/* Footer */}
       <footer className="px-5 py-3 border-t border-border-subtle bg-slate-25 flex items-center gap-2 shrink-0">
-        <Button
-          variant={reviewed ? 'primary' : 'secondary'}
-          size="sm"
-          leftIcon={<CheckCircle2 size={14} />}
-          onClick={() => {
-            setReviewed((v) => !v);
-            toast.success(reviewed ? 'Marked as not reviewed' : 'Marked as reviewed');
-          }}
-        >
-          {reviewed ? 'Reviewed' : 'Mark reviewed'}
-        </Button>
-        <Button
-          variant={flagged ? 'danger' : 'ghost'}
-          size="sm"
-          leftIcon={<Flag size={14} />}
-          onClick={() => {
-            setFlagged((v) => !v);
-            toast.push({
-              tone: flagged ? 'info' : 'warning',
-              title: flagged ? 'Unflagged' : 'Flagged for follow-up',
-            });
-          }}
-        >
-          {flagged ? 'Flagged' : 'Flag'}
-        </Button>
-        <span className="flex-1" />
         {detail?.notes && (
           <Badge tone="info">Has notes</Badge>
         )}
+        <span className="flex-1" />
         <Button
           variant="ghost"
           size="sm"

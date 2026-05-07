@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom';
 import {
   Megaphone,
   BarChart3,
-  Bot,
+  Users,
   ChevronDown,
   ChevronUp,
   LogOut,
@@ -27,16 +27,10 @@ interface NavSection {
 
 const navSections: NavSection[] = [
   {
-    heading: 'BUILD',
     items: [
       { to: '/campaigns', icon: Megaphone, label: 'Campaigns' },
-    ],
-  },
-  {
-    heading: 'OBSERVE',
-    items: [
-      { to: '/analytics/campaigns', icon: BarChart3, label: 'Campaign Analytics' },
-      { to: '/analytics/agents', icon: Bot, label: 'Agent Analytics' },
+      { to: '/analytics', icon: BarChart3, label: 'Analytics' },
+      { to: '/audiences', icon: Users, label: 'Audience list' },
     ],
   },
 ];
@@ -49,18 +43,28 @@ function SidebarLink({ item }: { item: NavItem }) {
       end={item.end}
       className={({ isActive }) =>
         cn(
-          'group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+          'group relative flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-150',
           isActive
-            ? 'bg-blue-50 text-brand-700'
+            ? 'bg-gradient-to-r from-blue-50 to-brand-50/40 text-brand-700 shadow-[inset_0_0_0_1px_rgba(31,79,191,0.08)]'
             : 'text-text-secondary hover:bg-slate-50 hover:text-text-primary',
         )
       }
     >
       {({ isActive }) => (
         <>
+          {/* Brand-blue accent stripe on the left edge of the active item */}
+          {isActive && (
+            <span
+              aria-hidden
+              className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r bg-gradient-to-b from-brand-500 to-blue-500"
+            />
+          )}
           <Icon
             size={18}
-            className={cn('shrink-0', isActive ? 'text-brand-700' : 'text-text-tertiary group-hover:text-text-secondary')}
+            className={cn(
+              'shrink-0 transition-colors',
+              isActive ? 'text-brand-700' : 'text-text-tertiary group-hover:text-text-secondary',
+            )}
           />
           <span className="truncate">{item.label}</span>
         </>
@@ -128,7 +132,7 @@ export function Sidebar() {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto px-3 pb-4 flex flex-col">
+      <nav className="flex-1 overflow-y-auto px-3 pt-2 pb-4 flex flex-col">
         {navSections.map((section, sIdx) => (
           <div key={sIdx} className={sIdx > 0 ? 'mt-5' : ''}>
             {section.heading && (
