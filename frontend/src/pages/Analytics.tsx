@@ -375,7 +375,7 @@ export default function Analytics({
 
       {preludeContent}
 
-      {/* FILTER BAR */}
+      {/* TOP FILTER BAR — page-level scope (campaign + time). */}
       <div className="sticky top-0 z-20 -mx-8 px-8 py-3 bg-bg/80 backdrop-blur border-b border-border-subtle mb-6">
         <div className="flex flex-wrap items-center gap-2">
           {!fixedCampaignId && (
@@ -388,28 +388,7 @@ export default function Analytics({
               menuMinWidth={300}
             />
           )}
-          <MultiSelect
-            options={intentOptions}
-            value={intents}
-            onChange={setIntents}
-            allLabel="All intents"
-            noun="intents"
-            menuMinWidth={240}
-          />
-          <MultiSelect
-            options={[
-              { value: 'positive', label: 'Positive' },
-              { value: 'neutral',  label: 'Neutral'  },
-              { value: 'negative', label: 'Negative' },
-            ]}
-            value={sentiments}
-            onChange={(v) => setSentiments(v as Sentiment[])}
-            allLabel="All sentiments"
-            noun="sentiments"
-            searchable={false}
-          />
           <DateRangeFilter value={range} onChange={setRange} now={MOCK_NOW} />
-          <DurationSelect value={durationRange} onChange={setDurationRange} />
 
           {filtersActive && (
             <button
@@ -424,15 +403,9 @@ export default function Analytics({
         <ActiveChips
           campaignIds={campaignIds}
           campaigns={allCampaigns ?? []}
-          intents={intents}
-          sentiments={sentiments}
-          phoneSearch={phoneSearch}
           failureFilter={failureFilter}
           fixedCampaignId={fixedCampaignId}
           onRemoveCampaign={(id) => setCampaignIds(campaignIds.filter((x) => x !== id))}
-          onRemoveIntent={(i) => setIntents(intents.filter((x) => x !== i))}
-          onRemoveSentiment={(s) => setSentiments(sentiments.filter((x) => x !== s))}
-          onRemovePhone={() => setPhoneSearchInput('')}
           onRemoveFailure={() => setFailureFilter(null)}
         />
       </div>
@@ -510,6 +483,13 @@ export default function Analytics({
         onRowClick={(c) => openCall(c.id)}
         phoneSearchInput={phoneSearchInput}
         onPhoneSearchChange={setPhoneSearchInput}
+        intents={intents}
+        onIntentsChange={setIntents}
+        intentOptions={intentOptions}
+        sentiments={sentiments}
+        onSentimentsChange={setSentiments}
+        durationRange={durationRange}
+        onDurationChange={setDurationRange}
         workspace={activeWorkspace}
       />
 
@@ -713,6 +693,13 @@ function CallsSection({
   workspace,
   phoneSearchInput,
   onPhoneSearchChange,
+  intents,
+  onIntentsChange,
+  intentOptions,
+  sentiments,
+  onSentimentsChange,
+  durationRange,
+  onDurationChange,
 }: {
   loading: boolean;
   rows: CallSummary[];
@@ -724,6 +711,13 @@ function CallsSection({
   workspace: Workspace;
   phoneSearchInput: string;
   onPhoneSearchChange: (v: string) => void;
+  intents: string[];
+  onIntentsChange: (v: string[]) => void;
+  intentOptions: { value: string; label: string }[];
+  sentiments: Sentiment[];
+  onSentimentsChange: (v: Sentiment[]) => void;
+  durationRange: [number, number];
+  onDurationChange: (r: [number, number]) => void;
 }) {
   const start = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const end = Math.min(total, page * pageSize);
@@ -814,8 +808,8 @@ function CallsSection({
 
   return (
     <section className="mb-6">
-      <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
-        <div className="w-full sm:w-72">
+      <div className="flex items-center gap-2 mb-3 flex-wrap">
+        <div className="w-full sm:w-64">
           <Input
             placeholder="Search by phone number..."
             leftIcon={<Search size={14} />}
@@ -823,7 +817,29 @@ function CallsSection({
             onChange={(e) => onPhoneSearchChange(e.target.value)}
           />
         </div>
-        <span className="text-xs text-text-tertiary tabular shrink-0">
+        <MultiSelect
+          options={intentOptions}
+          value={intents}
+          onChange={onIntentsChange}
+          allLabel="All intents"
+          noun="intents"
+          menuMinWidth={240}
+        />
+        <MultiSelect
+          options={[
+            { value: 'positive', label: 'Positive' },
+            { value: 'neutral',  label: 'Neutral'  },
+            { value: 'negative', label: 'Negative' },
+          ]}
+          value={sentiments}
+          onChange={(v) => onSentimentsChange(v as Sentiment[])}
+          allLabel="All sentiments"
+          noun="sentiments"
+          searchable={false}
+        />
+        <DurationSelect value={durationRange} onChange={onDurationChange} />
+
+        <span className="ml-auto text-xs text-text-tertiary tabular shrink-0">
           {loading
             ? 'Loading…'
             : `Showing ${start.toLocaleString('en-IN')}–${end.toLocaleString('en-IN')} of ${total.toLocaleString('en-IN')} calls`}
@@ -876,28 +892,16 @@ function AwaitingPill({ compact }: { compact?: boolean }) {
 function ActiveChips({
   campaignIds,
   campaigns,
-  intents,
-  sentiments,
-  phoneSearch,
   failureFilter,
   fixedCampaignId,
   onRemoveCampaign,
-  onRemoveIntent,
-  onRemoveSentiment,
-  onRemovePhone,
   onRemoveFailure,
 }: {
   campaignIds: string[];
   campaigns: Campaign[];
-  intents: string[];
-  sentiments: Sentiment[];
-  phoneSearch: string;
   failureFilter: FailureReason | null;
   fixedCampaignId?: string;
   onRemoveCampaign: (id: string) => void;
-  onRemoveIntent: (i: string) => void;
-  onRemoveSentiment: (s: Sentiment) => void;
-  onRemovePhone: () => void;
   onRemoveFailure: () => void;
 }) {
   const items: { key: string; label: string; remove: () => void }[] = [];
@@ -906,15 +910,6 @@ function ActiveChips({
       const c = campaigns.find((x) => x.id === id);
       if (c) items.push({ key: `c:${id}`, label: c.name, remove: () => onRemoveCampaign(id) });
     }
-  }
-  for (const i of intents) {
-    items.push({ key: `i:${i}`, label: `Intent: ${intentLabel(i)}`, remove: () => onRemoveIntent(i) });
-  }
-  for (const s of sentiments) {
-    items.push({ key: `s:${s}`, label: `${s[0].toUpperCase()}${s.slice(1)} sentiment`, remove: () => onRemoveSentiment(s) });
-  }
-  if (phoneSearch) {
-    items.push({ key: `p`, label: `Phone: ${phoneSearch}`, remove: onRemovePhone });
   }
   if (failureFilter) {
     items.push({ key: `f`, label: `Failure: ${failureReasonLabel(failureFilter)}`, remove: onRemoveFailure });
