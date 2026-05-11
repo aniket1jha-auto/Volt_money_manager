@@ -8,14 +8,12 @@ import {
 } from 'lucide-react';
 import type { CallSummary, CallDetail, Workspace } from '@/types';
 import { Drawer } from '@/components/ui/Drawer';
-import { Tabs } from '@/components/ui/Tabs';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { CallStatusBadge } from './StatusBadge';
 import { AudioPlayer } from './AudioPlayer';
 import { TranscriptView } from './TranscriptView';
-import { InsightsView } from './InsightsView';
 import { useToast } from '@/components/ui/Toast';
 import { getCallDetail } from '@/lib/api';
 import {
@@ -41,7 +39,6 @@ export function CallDetailDrawer({
   onClose,
 }: CallDetailDrawerProps) {
   const open = call !== null;
-  const [tab, setTab] = useState<'transcript' | 'insights'>('transcript');
   const [detail, setDetail] = useState<CallDetail | null | undefined>(undefined); // undefined = loading
   const [currentMs, setCurrentMs] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -50,7 +47,6 @@ export function CallDetailDrawer({
   // Reset whenever a new call is opened.
   useEffect(() => {
     if (!call) return;
-    setTab('transcript');
     setDetail(undefined);
     setCurrentMs(0);
     setPlaying(false);
@@ -134,49 +130,33 @@ export function CallDetailDrawer({
             </div>
           )}
 
-          {/* Tabs */}
-          <Tabs
-            value={tab}
-            onChange={setTab}
-            tabs={[
-              { value: 'transcript', label: 'Transcript', count: detail?.transcript?.length },
-              { value: 'insights', label: 'Insights' },
-            ]}
-          />
-
-          <div className="pt-2">
-            {tab === 'transcript' && (
-              <>
-                {detail === undefined ? (
-                  <TranscriptSkeleton />
-                ) : detail?.transcript && detail.transcript.length > 0 ? (
-                  <TranscriptView
-                    turns={detail.transcript}
-                    currentMs={currentMs}
-                    onSeek={(ms) => {
-                      setCurrentMs(ms);
-                      if (!playing) setPlaying(true);
-                    }}
-                  />
-                ) : (
-                  <p className="text-sm text-text-tertiary py-8 text-center">
-                    No transcript available for this call.
-                  </p>
-                )}
-              </>
-            )}
-            {tab === 'insights' && (
-              <>
-                {detail === undefined ? (
-                  <InsightsSkeleton />
-                ) : detail?.insights ? (
-                  <InsightsView insights={detail.insights} />
-                ) : (
-                  <p className="text-sm text-text-tertiary py-8 text-center">
-                    No insights available for this call.
-                  </p>
-                )}
-              </>
+          {/* Transcript */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xs font-semibold uppercase tracking-[0.06em] text-text-tertiary">
+                Transcript
+              </h3>
+              {detail?.transcript && detail.transcript.length > 0 && (
+                <span className="text-[11px] text-text-tertiary tabular">
+                  {detail.transcript.length} turns
+                </span>
+              )}
+            </div>
+            {detail === undefined ? (
+              <TranscriptSkeleton />
+            ) : detail?.transcript && detail.transcript.length > 0 ? (
+              <TranscriptView
+                turns={detail.transcript}
+                currentMs={currentMs}
+                onSeek={(ms) => {
+                  setCurrentMs(ms);
+                  if (!playing) setPlaying(true);
+                }}
+              />
+            ) : (
+              <p className="text-sm text-text-tertiary py-8 text-center">
+                No transcript available for this call.
+              </p>
             )}
           </div>
         </div>
@@ -211,24 +191,3 @@ function TranscriptSkeleton() {
   );
 }
 
-function InsightsSkeleton() {
-  return (
-    <div className="space-y-5">
-      <div>
-        <Skeleton className="h-3 w-16 mb-2" />
-        <Skeleton className="h-7 w-40" />
-      </div>
-      <div>
-        <Skeleton className="h-3 w-24 mb-2" />
-        <Skeleton className="h-24 w-full" />
-      </div>
-      <div>
-        <Skeleton className="h-3 w-24 mb-2" />
-        <div className="grid grid-cols-2 gap-2">
-          <Skeleton className="h-16 w-full" />
-          <Skeleton className="h-16 w-full" />
-        </div>
-      </div>
-    </div>
-  );
-}
