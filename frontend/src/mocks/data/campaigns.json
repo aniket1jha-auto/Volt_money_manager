@@ -29,21 +29,30 @@
     "metrics": {
       "baseUploaded": 2100,
       "callsInitiated": 1385,
-      "callsConnected": 1110,
-      "callsAnswered": 1038,
-      "callsFailed": 275,
+      "callsConnected": 1112,
+      "callsAnswered": 1040,
+      "callsFailed": 273,
       "avgCallDuration": 40,
-      "totalCost": 2443.21
+      "totalCost": 2445.39
     },
-    "goal": {
-      "description": "Lock in payment commitments before the EMI due date.",
-      "targetIntent": "payment_promised"
-    },
+    "description": "Reach customers ahead of their EMI date to lock in payment commitments.",
     "feedbackIntents": [
-      "payment_promised",
-      "payment_already_done",
-      "call_me_later",
-      "complaint_raised"
+      {
+        "name": "Payment promised",
+        "description": "Customer committed to making the payment by a specific date."
+      },
+      {
+        "name": "Already paid",
+        "description": "Customer says the payment has already been made (verify against records)."
+      },
+      {
+        "name": "Call me later",
+        "description": "Customer asked to be contacted again at a more convenient time."
+      },
+      {
+        "name": "Complaint raised",
+        "description": "Customer raised a service complaint that needs follow-up by support."
+      }
     ],
     "createdBy": "user_001",
     "createdAt": "2026-04-27T09:00:00.000Z",
@@ -79,21 +88,30 @@
     "metrics": {
       "baseUploaded": 920,
       "callsInitiated": 590,
-      "callsConnected": 462,
-      "callsAnswered": 432,
-      "callsFailed": 128,
+      "callsConnected": 465,
+      "callsAnswered": 435,
+      "callsFailed": 125,
       "avgCallDuration": 40,
-      "totalCost": 1029.83
+      "totalCost": 1030.86
     },
-    "goal": {
-      "description": "Recover dues — get the customer to commit to repayment or restructuring.",
-      "targetIntent": "payment_promised"
-    },
+    "description": "Reach dues-overdue customers and capture a path back to repayment.",
     "feedbackIntents": [
-      "payment_promised",
-      "payment_already_done",
-      "call_me_later",
-      "complaint_raised"
+      {
+        "name": "Payment promised",
+        "description": "Customer committed to making the payment by a specific date."
+      },
+      {
+        "name": "Already paid",
+        "description": "Customer says the payment has already been made (verify against records)."
+      },
+      {
+        "name": "Call me later",
+        "description": "Customer asked to be contacted again at a more convenient time."
+      },
+      {
+        "name": "Complaint raised",
+        "description": "Customer raised a service complaint that needs follow-up by support."
+      }
     ],
     "createdBy": "user_001",
     "createdAt": "2026-04-25T09:00:00.000Z",
@@ -129,21 +147,30 @@
     "metrics": {
       "baseUploaded": 460,
       "callsInitiated": 302,
-      "callsConnected": 239,
-      "callsAnswered": 213,
-      "callsFailed": 63,
+      "callsConnected": 240,
+      "callsAnswered": 215,
+      "callsFailed": 62,
       "avgCallDuration": 39,
-      "totalCost": 524.19
+      "totalCost": 525.01
     },
-    "goal": {
-      "description": "Recover dues — get the customer to commit to repayment or restructuring.",
-      "targetIntent": "payment_promised"
-    },
+    "description": "Reach dues-overdue customers and capture a path back to repayment.",
     "feedbackIntents": [
-      "payment_promised",
-      "payment_already_done",
-      "call_me_later",
-      "complaint_raised"
+      {
+        "name": "Payment promised",
+        "description": "Customer committed to making the payment by a specific date."
+      },
+      {
+        "name": "Already paid",
+        "description": "Customer says the payment has already been made (verify against records)."
+      },
+      {
+        "name": "Call me later",
+        "description": "Customer asked to be contacted again at a more convenient time."
+      },
+      {
+        "name": "Complaint raised",
+        "description": "Customer raised a service complaint that needs follow-up by support."
+      }
     ],
     "createdBy": "user_001",
     "createdAt": "2026-04-26T09:00:00.000Z",
@@ -179,21 +206,30 @@
     "metrics": {
       "baseUploaded": 670,
       "callsInitiated": 378,
-      "callsConnected": 313,
-      "callsAnswered": 284,
-      "callsFailed": 65,
+      "callsConnected": 315,
+      "callsAnswered": 288,
+      "callsFailed": 63,
       "avgCallDuration": 39,
-      "totalCost": 666.64
+      "totalCost": 677.4
     },
-    "goal": {
-      "description": "Drive KYC completion live on the call so disbursals can move forward.",
-      "targetIntent": "kyc_completed_on_call"
-    },
+    "description": "Drive eKYC completion live on the call so disbursals can move forward.",
     "feedbackIntents": [
-      "kyc_completed_on_call",
-      "documents_requested",
-      "requesting_branch_visit",
-      "call_me_later"
+      {
+        "name": "KYC completed on call",
+        "description": "Customer completed eKYC verification during the call and is ready for the next step."
+      },
+      {
+        "name": "Documents requested",
+        "description": "Customer agreed to share or upload pending documents after the call."
+      },
+      {
+        "name": "Will visit branch",
+        "description": "Customer prefers to handle the next step at a branch in person."
+      },
+      {
+        "name": "Call me later",
+        "description": "Customer asked to be contacted again at a more convenient time."
+      }
     ],
     "createdBy": "user_001",
     "createdAt": "2026-04-26T09:00:00.000Z",
@@ -229,21 +265,30 @@
     "metrics": {
       "baseUploaded": 340,
       "callsInitiated": 279,
-      "callsConnected": 221,
-      "callsAnswered": 198,
-      "callsFailed": 58,
+      "callsConnected": 222,
+      "callsAnswered": 199,
+      "callsFailed": 57,
       "avgCallDuration": 39,
-      "totalCost": 476.22
+      "totalCost": 475.6
     },
-    "goal": {
-      "description": "Lock in payment commitments before the EMI due date.",
-      "targetIntent": "payment_promised"
-    },
+    "description": "Reach customers ahead of their EMI date to lock in payment commitments.",
     "feedbackIntents": [
-      "payment_promised",
-      "payment_already_done",
-      "call_me_later",
-      "complaint_raised"
+      {
+        "name": "Payment promised",
+        "description": "Customer committed to making the payment by a specific date."
+      },
+      {
+        "name": "Already paid",
+        "description": "Customer says the payment has already been made (verify against records)."
+      },
+      {
+        "name": "Call me later",
+        "description": "Customer asked to be contacted again at a more convenient time."
+      },
+      {
+        "name": "Complaint raised",
+        "description": "Customer raised a service complaint that needs follow-up by support."
+      }
     ],
     "createdBy": "user_001",
     "createdAt": "2026-04-18T09:00:00.000Z",
@@ -279,16 +324,31 @@
     "metrics": {
       "baseUploaded": 2090,
       "callsInitiated": 2090,
-      "callsConnected": 1662,
+      "callsConnected": 1664,
       "callsAnswered": 1546,
-      "callsFailed": 428,
+      "callsFailed": 426,
       "avgCallDuration": 40,
-      "totalCost": 3634.77
+      "totalCost": 3631.92
     },
-    "goal": {
-      "description": "Lock in payment commitments before the EMI due date.",
-      "targetIntent": "payment_promised"
-    },
+    "description": "Reach customers ahead of their EMI date to lock in payment commitments.",
+    "feedbackIntents": [
+      {
+        "name": "Payment promised",
+        "description": "Customer committed to making the payment by a specific date."
+      },
+      {
+        "name": "Already paid",
+        "description": "Customer says the payment has already been made (verify against records)."
+      },
+      {
+        "name": "Call me later",
+        "description": "Customer asked to be contacted again at a more convenient time."
+      },
+      {
+        "name": "Complaint raised",
+        "description": "Customer raised a service complaint that needs follow-up by support."
+      }
+    ],
     "createdBy": "user_001",
     "createdAt": "2026-02-20T09:00:00.000Z",
     "startedAt": "2026-02-22T09:00:00.000Z",
@@ -302,10 +362,10 @@
     "status": "inactive",
     "contactList": {
       "fileName": "emi_reminder_february_2026.csv",
-      "uploadedAt": "2026-04-24T13:00:00.000Z",
-      "totalRows": 2076,
+      "uploadedAt": "2026-03-04T09:00:00.000Z",
+      "totalRows": 2058,
       "validRows": 1975,
-      "invalidRows": 73,
+      "invalidRows": 55,
       "duplicates": 28,
       "columnMapping": {
         "phone": "phone_number",
@@ -324,20 +384,35 @@
     "metrics": {
       "baseUploaded": 1975,
       "callsInitiated": 1975,
-      "callsConnected": 1591,
+      "callsConnected": 1589,
       "callsAnswered": 1472,
-      "callsFailed": 384,
+      "callsFailed": 386,
       "avgCallDuration": 40,
-      "totalCost": 3477.53
+      "totalCost": 3478.41
     },
-    "goal": {
-      "description": "Lock in payment commitments before the EMI due date.",
-      "targetIntent": "payment_promised"
-    },
+    "description": "Reach customers ahead of their EMI date to lock in payment commitments.",
+    "feedbackIntents": [
+      {
+        "name": "Payment promised",
+        "description": "Customer committed to making the payment by a specific date."
+      },
+      {
+        "name": "Already paid",
+        "description": "Customer says the payment has already been made (verify against records)."
+      },
+      {
+        "name": "Call me later",
+        "description": "Customer asked to be contacted again at a more convenient time."
+      },
+      {
+        "name": "Complaint raised",
+        "description": "Customer raised a service complaint that needs follow-up by support."
+      }
+    ],
     "createdBy": "user_001",
-    "createdAt": "2026-02-01T09:00:00.000Z",
-    "startedAt": "2026-02-03T09:00:00.000Z",
-    "completedAt": "2026-02-07T09:00:00.000Z"
+    "createdAt": "2026-02-17T09:00:00.000Z",
+    "startedAt": "2026-02-19T09:00:00.000Z",
+    "completedAt": "2026-02-26T09:00:00.000Z"
   },
   {
     "id": "camp_008",
@@ -347,11 +422,11 @@
     "status": "inactive",
     "contactList": {
       "fileName": "loan_recovery_q1_2026_sweep.csv",
-      "uploadedAt": "2026-03-11T12:00:00.000Z",
-      "totalRows": 1140,
+      "uploadedAt": "2026-04-22T12:00:00.000Z",
+      "totalRows": 1135,
       "validRows": 1115,
-      "invalidRows": 15,
-      "duplicates": 10,
+      "invalidRows": 14,
+      "duplicates": 6,
       "columnMapping": {
         "phone": "phone_number",
         "customer_name": "customer_name",
@@ -370,21 +445,34 @@
       "baseUploaded": 1115,
       "callsInitiated": 1115,
       "callsConnected": 870,
-      "callsAnswered": 808,
+      "callsAnswered": 807,
       "callsFailed": 245,
       "avgCallDuration": 40,
-      "totalCost": 1924.31
+      "totalCost": 1920.91
     },
+    "description": "Reach dues-overdue customers and capture a path back to repayment.",
     "feedbackIntents": [
-      "payment_promised",
-      "payment_already_done",
-      "call_me_later",
-      "complaint_raised"
+      {
+        "name": "Payment promised",
+        "description": "Customer committed to making the payment by a specific date."
+      },
+      {
+        "name": "Already paid",
+        "description": "Customer says the payment has already been made (verify against records)."
+      },
+      {
+        "name": "Call me later",
+        "description": "Customer asked to be contacted again at a more convenient time."
+      },
+      {
+        "name": "Complaint raised",
+        "description": "Customer raised a service complaint that needs follow-up by support."
+      }
     ],
     "createdBy": "user_001",
-    "createdAt": "2026-02-08T09:00:00.000Z",
-    "startedAt": "2026-02-10T09:00:00.000Z",
-    "completedAt": "2026-02-12T09:00:00.000Z"
+    "createdAt": "2026-02-05T09:00:00.000Z",
+    "startedAt": "2026-02-07T09:00:00.000Z",
+    "completedAt": "2026-02-11T09:00:00.000Z"
   },
   {
     "id": "camp_009",
@@ -394,11 +482,11 @@
     "status": "inactive",
     "contactList": {
       "fileName": "application_status_feb_intake.csv",
-      "uploadedAt": "2026-03-10T10:00:00.000Z",
-      "totalRows": 848,
+      "uploadedAt": "2026-04-22T16:00:00.000Z",
+      "totalRows": 841,
       "validRows": 810,
-      "invalidRows": 28,
-      "duplicates": 10,
+      "invalidRows": 20,
+      "duplicates": 11,
       "columnMapping": {
         "phone": "phone_number",
         "customer_name": "customer_name",
@@ -416,21 +504,17 @@
     "metrics": {
       "baseUploaded": 810,
       "callsInitiated": 810,
-      "callsConnected": 661,
+      "callsConnected": 662,
       "callsAnswered": 616,
-      "callsFailed": 149,
+      "callsFailed": 148,
       "avgCallDuration": 40,
-      "totalCost": 1444.28
+      "totalCost": 1443.82
     },
-    "feedbackIntents": [
-      "documents_requested",
-      "application_submitted",
-      "call_me_later"
-    ],
+    "description": "Reach pending applicants and close out outstanding documentation.",
     "createdBy": "user_001",
-    "createdAt": "2026-03-08T09:00:00.000Z",
-    "startedAt": "2026-03-10T09:00:00.000Z",
-    "completedAt": "2026-03-14T09:00:00.000Z"
+    "createdAt": "2026-02-11T09:00:00.000Z",
+    "startedAt": "2026-02-13T09:00:00.000Z",
+    "completedAt": "2026-02-20T09:00:00.000Z"
   },
   {
     "id": "camp_010",
@@ -440,11 +524,11 @@
     "status": "inactive",
     "contactList": {
       "fileName": "kyc_pending_personal_loan_jan.csv",
-      "uploadedAt": "2026-03-02T16:00:00.000Z",
-      "totalRows": 766,
+      "uploadedAt": "2026-04-25T09:00:00.000Z",
+      "totalRows": 758,
       "validRows": 740,
-      "invalidRows": 18,
-      "duplicates": 8,
+      "invalidRows": 11,
+      "duplicates": 7,
       "columnMapping": {
         "phone": "phone_number",
         "customer_name": "customer_name",
@@ -462,22 +546,35 @@
     "metrics": {
       "baseUploaded": 740,
       "callsInitiated": 740,
-      "callsConnected": 599,
-      "callsAnswered": 557,
-      "callsFailed": 141,
+      "callsConnected": 600,
+      "callsAnswered": 560,
+      "callsFailed": 140,
       "avgCallDuration": 40,
-      "totalCost": 1305.84
+      "totalCost": 1313.51
     },
+    "description": "Drive eKYC completion live on the call so disbursals can move forward.",
     "feedbackIntents": [
-      "kyc_completed_on_call",
-      "documents_requested",
-      "requesting_branch_visit",
-      "call_me_later"
+      {
+        "name": "KYC completed on call",
+        "description": "Customer completed eKYC verification during the call and is ready for the next step."
+      },
+      {
+        "name": "Documents requested",
+        "description": "Customer agreed to share or upload pending documents after the call."
+      },
+      {
+        "name": "Will visit branch",
+        "description": "Customer prefers to handle the next step at a branch in person."
+      },
+      {
+        "name": "Call me later",
+        "description": "Customer asked to be contacted again at a more convenient time."
+      }
     ],
     "createdBy": "user_001",
-    "createdAt": "2026-03-09T09:00:00.000Z",
-    "startedAt": "2026-03-11T09:00:00.000Z",
-    "completedAt": "2026-03-17T09:00:00.000Z"
+    "createdAt": "2026-02-20T09:00:00.000Z",
+    "startedAt": "2026-02-22T09:00:00.000Z",
+    "completedAt": "2026-02-27T09:00:00.000Z"
   },
   {
     "id": "camp_011",
@@ -487,11 +584,11 @@
     "status": "inactive",
     "contactList": {
       "fileName": "kyc_pending_auto_loan_feb.csv",
-      "uploadedAt": "2026-04-22T08:00:00.000Z",
-      "totalRows": 394,
+      "uploadedAt": "2026-04-29T16:00:00.000Z",
+      "totalRows": 396,
       "validRows": 380,
-      "invalidRows": 9,
-      "duplicates": 5,
+      "invalidRows": 13,
+      "duplicates": 3,
       "columnMapping": {
         "phone": "phone_number",
         "customer_name": "customer_name",
@@ -509,16 +606,35 @@
     "metrics": {
       "baseUploaded": 380,
       "callsInitiated": 380,
-      "callsConnected": 302,
-      "callsAnswered": 284,
-      "callsFailed": 78,
+      "callsConnected": 299,
+      "callsAnswered": 281,
+      "callsFailed": 81,
       "avgCallDuration": 40,
-      "totalCost": 663.5
+      "totalCost": 656.42
     },
+    "description": "Drive eKYC completion live on the call so disbursals can move forward.",
+    "feedbackIntents": [
+      {
+        "name": "KYC completed on call",
+        "description": "Customer completed eKYC verification during the call and is ready for the next step."
+      },
+      {
+        "name": "Documents requested",
+        "description": "Customer agreed to share or upload pending documents after the call."
+      },
+      {
+        "name": "Will visit branch",
+        "description": "Customer prefers to handle the next step at a branch in person."
+      },
+      {
+        "name": "Call me later",
+        "description": "Customer asked to be contacted again at a more convenient time."
+      }
+    ],
     "createdBy": "user_001",
-    "createdAt": "2026-03-09T09:00:00.000Z",
-    "startedAt": "2026-03-11T09:00:00.000Z",
-    "completedAt": "2026-03-18T09:00:00.000Z"
+    "createdAt": "2026-02-19T09:00:00.000Z",
+    "startedAt": "2026-02-21T09:00:00.000Z",
+    "completedAt": "2026-02-25T09:00:00.000Z"
   },
   {
     "id": "camp_012",
@@ -528,11 +644,11 @@
     "status": "inactive",
     "contactList": {
       "fileName": "loan_recovery_90_dpd_q1.csv",
-      "uploadedAt": "2026-03-29T10:00:00.000Z",
-      "totalRows": 278,
+      "uploadedAt": "2026-04-20T11:00:00.000Z",
+      "totalRows": 277,
       "validRows": 270,
-      "invalidRows": 4,
-      "duplicates": 4,
+      "invalidRows": 5,
+      "duplicates": 2,
       "columnMapping": {
         "phone": "phone_number",
         "customer_name": "customer_name",
@@ -550,20 +666,17 @@
     "metrics": {
       "baseUploaded": 270,
       "callsInitiated": 270,
-      "callsConnected": 211,
-      "callsAnswered": 196,
-      "callsFailed": 59,
+      "callsConnected": 213,
+      "callsAnswered": 198,
+      "callsFailed": 57,
       "avgCallDuration": 40,
-      "totalCost": 469.18
+      "totalCost": 472.59
     },
-    "goal": {
-      "description": "Recover dues — get the customer to commit to repayment or restructuring.",
-      "targetIntent": "payment_promised"
-    },
+    "description": "Reach dues-overdue customers and capture a path back to repayment.",
     "createdBy": "user_001",
-    "createdAt": "2026-01-29T09:00:00.000Z",
-    "startedAt": "2026-01-31T09:00:00.000Z",
-    "completedAt": "2026-02-02T09:00:00.000Z"
+    "createdAt": "2026-02-10T09:00:00.000Z",
+    "startedAt": "2026-02-12T09:00:00.000Z",
+    "completedAt": "2026-02-19T09:00:00.000Z"
   },
   {
     "id": "camp_013",
@@ -573,10 +686,10 @@
     "status": "inactive",
     "contactList": {
       "fileName": "renewal_outreach_personal_loan.csv",
-      "uploadedAt": "2026-03-03T09:00:00.000Z",
-      "totalRows": 460,
+      "uploadedAt": "2026-04-11T18:00:00.000Z",
+      "totalRows": 450,
       "validRows": 440,
-      "invalidRows": 15,
+      "invalidRows": 5,
       "duplicates": 5,
       "columnMapping": {
         "phone": "phone_number",
@@ -595,16 +708,35 @@
     "metrics": {
       "baseUploaded": 440,
       "callsInitiated": 440,
-      "callsConnected": 350,
-      "callsAnswered": 325,
-      "callsFailed": 90,
+      "callsConnected": 349,
+      "callsAnswered": 324,
+      "callsFailed": 91,
       "avgCallDuration": 40,
-      "totalCost": 765.73
+      "totalCost": 763.79
     },
+    "description": "Surface qualified leads who are ready to apply for a follow-up offer.",
+    "feedbackIntents": [
+      {
+        "name": "Application submitted",
+        "description": "Customer submitted (or agreed to submit on call) the application form."
+      },
+      {
+        "name": "Interested — will apply",
+        "description": "Customer expressed clear interest and intends to apply."
+      },
+      {
+        "name": "Call me later",
+        "description": "Customer asked to be contacted again at a more convenient time."
+      },
+      {
+        "name": "Not interested",
+        "description": "Customer explicitly declined the offer or product."
+      }
+    ],
     "createdBy": "user_001",
-    "createdAt": "2026-03-14T09:00:00.000Z",
-    "startedAt": "2026-03-16T09:00:00.000Z",
-    "completedAt": "2026-03-23T09:00:00.000Z"
+    "createdAt": "2026-02-03T09:00:00.000Z",
+    "startedAt": "2026-02-05T09:00:00.000Z",
+    "completedAt": "2026-02-10T09:00:00.000Z"
   },
   {
     "id": "camp_014",
@@ -614,10 +746,10 @@
     "status": "inactive",
     "contactList": {
       "fileName": "document_reminder_income_proof.csv",
-      "uploadedAt": "2026-03-15T11:00:00.000Z",
-      "totalRows": 325,
+      "uploadedAt": "2026-04-24T11:00:00.000Z",
+      "totalRows": 317,
       "validRows": 310,
-      "invalidRows": 11,
+      "invalidRows": 3,
       "duplicates": 4,
       "columnMapping": {
         "phone": "phone_number",
@@ -636,24 +768,27 @@
     "metrics": {
       "baseUploaded": 310,
       "callsInitiated": 310,
-      "callsConnected": 247,
-      "callsAnswered": 233,
-      "callsFailed": 63,
+      "callsConnected": 248,
+      "callsAnswered": 234,
+      "callsFailed": 62,
       "avgCallDuration": 41,
-      "totalCost": 535.52
+      "totalCost": 540.59
     },
-    "goal": {
-      "description": "Get pending documents off the customer.",
-      "targetIntent": "documents_requested"
-    },
+    "description": "Chase pending documents from customers mid-application.",
     "feedbackIntents": [
-      "documents_requested",
-      "call_me_later"
+      {
+        "name": "Documents requested",
+        "description": "Customer agreed to share or upload pending documents after the call."
+      },
+      {
+        "name": "Call me later",
+        "description": "Customer asked to be contacted again at a more convenient time."
+      }
     ],
     "createdBy": "user_001",
-    "createdAt": "2026-02-07T09:00:00.000Z",
-    "startedAt": "2026-02-09T09:00:00.000Z",
-    "completedAt": "2026-02-13T09:00:00.000Z"
+    "createdAt": "2026-01-29T09:00:00.000Z",
+    "startedAt": "2026-01-31T09:00:00.000Z",
+    "completedAt": "2026-02-05T09:00:00.000Z"
   },
   {
     "id": "camp_015",
@@ -663,11 +798,11 @@
     "status": "inactive",
     "contactList": {
       "fileName": "emi_bounce_recovery_march.csv",
-      "uploadedAt": "2026-04-07T17:00:00.000Z",
-      "totalRows": 574,
+      "uploadedAt": "2026-04-04T12:00:00.000Z",
+      "totalRows": 578,
       "validRows": 560,
-      "invalidRows": 10,
-      "duplicates": 4,
+      "invalidRows": 11,
+      "duplicates": 7,
       "columnMapping": {
         "phone": "phone_number",
         "customer_name": "customer_name",
@@ -689,22 +824,13 @@
       "callsAnswered": 400,
       "callsFailed": 126,
       "avgCallDuration": 40,
-      "totalCost": 949.96
+      "totalCost": 945.63
     },
-    "goal": {
-      "description": "Lock in payment commitments before the EMI due date.",
-      "targetIntent": "payment_promised"
-    },
-    "feedbackIntents": [
-      "payment_promised",
-      "payment_already_done",
-      "call_me_later",
-      "complaint_raised"
-    ],
+    "description": "Reach customers ahead of their EMI date to lock in payment commitments.",
     "createdBy": "user_001",
-    "createdAt": "2026-02-12T09:00:00.000Z",
-    "startedAt": "2026-02-14T09:00:00.000Z",
-    "completedAt": "2026-02-17T09:00:00.000Z"
+    "createdAt": "2026-02-10T09:00:00.000Z",
+    "startedAt": "2026-02-12T09:00:00.000Z",
+    "completedAt": "2026-02-18T09:00:00.000Z"
   },
   {
     "id": "camp_016",
@@ -714,11 +840,11 @@
     "status": "inactive",
     "contactList": {
       "fileName": "cross_sell_top_up_loans.csv",
-      "uploadedAt": "2026-04-04T14:00:00.000Z",
+      "uploadedAt": "2026-03-21T10:00:00.000Z",
       "totalRows": 750,
       "validRows": 725,
-      "invalidRows": 16,
-      "duplicates": 9,
+      "invalidRows": 15,
+      "duplicates": 10,
       "columnMapping": {
         "phone": "phone_number",
         "customer_name": "customer_name",
@@ -736,16 +862,35 @@
     "metrics": {
       "baseUploaded": 725,
       "callsInitiated": 725,
-      "callsConnected": 578,
-      "callsAnswered": 548,
-      "callsFailed": 147,
+      "callsConnected": 577,
+      "callsAnswered": 547,
+      "callsFailed": 148,
       "avgCallDuration": 41,
-      "totalCost": 1284.03
+      "totalCost": 1283.37
     },
+    "description": "Surface qualified leads who are ready to apply for a follow-up offer.",
+    "feedbackIntents": [
+      {
+        "name": "Application submitted",
+        "description": "Customer submitted (or agreed to submit on call) the application form."
+      },
+      {
+        "name": "Interested — will apply",
+        "description": "Customer expressed clear interest and intends to apply."
+      },
+      {
+        "name": "Call me later",
+        "description": "Customer asked to be contacted again at a more convenient time."
+      },
+      {
+        "name": "Not interested",
+        "description": "Customer explicitly declined the offer or product."
+      }
+    ],
     "createdBy": "user_001",
     "createdAt": "2026-02-20T09:00:00.000Z",
     "startedAt": "2026-02-22T09:00:00.000Z",
-    "completedAt": "2026-02-26T09:00:00.000Z"
+    "completedAt": "2026-02-28T09:00:00.000Z"
   },
   {
     "id": "camp_017",
@@ -755,11 +900,11 @@
     "status": "inactive",
     "contactList": {
       "fileName": "welcome_calls_new_disbursements_jan.csv",
-      "uploadedAt": "2026-04-05T17:00:00.000Z",
-      "totalRows": 368,
+      "uploadedAt": "2026-03-25T13:00:00.000Z",
+      "totalRows": 375,
       "validRows": 360,
-      "invalidRows": 6,
-      "duplicates": 2,
+      "invalidRows": 12,
+      "duplicates": 3,
       "columnMapping": {
         "phone": "phone_number",
         "customer_name": "customer_name",
@@ -777,26 +922,17 @@
     "metrics": {
       "baseUploaded": 360,
       "callsInitiated": 360,
-      "callsConnected": 297,
-      "callsAnswered": 283,
-      "callsFailed": 63,
+      "callsConnected": 299,
+      "callsAnswered": 284,
+      "callsFailed": 61,
       "avgCallDuration": 41,
-      "totalCost": 654
+      "totalCost": 655.92
     },
-    "goal": {
-      "description": "Onboard new disbursements with a positive welcome call.",
-      "targetIntent": "interested_will_apply"
-    },
-    "feedbackIntents": [
-      "interested_will_apply",
-      "application_submitted",
-      "call_me_later",
-      "not_interested"
-    ],
+    "description": "Onboard freshly-disbursed customers with a friendly welcome call.",
     "createdBy": "user_001",
-    "createdAt": "2026-01-28T09:00:00.000Z",
-    "startedAt": "2026-01-30T09:00:00.000Z",
-    "completedAt": "2026-02-06T09:00:00.000Z"
+    "createdAt": "2026-02-22T09:00:00.000Z",
+    "startedAt": "2026-02-24T09:00:00.000Z",
+    "completedAt": "2026-02-26T09:00:00.000Z"
   },
   {
     "id": "camp_018",
@@ -806,11 +942,11 @@
     "status": "inactive",
     "contactList": {
       "fileName": "welcome_calls_new_disbursements_feb.csv",
-      "uploadedAt": "2026-04-10T14:00:00.000Z",
-      "totalRows": 412,
+      "uploadedAt": "2026-04-05T17:00:00.000Z",
+      "totalRows": 415,
       "validRows": 405,
-      "invalidRows": 5,
-      "duplicates": 2,
+      "invalidRows": 7,
+      "duplicates": 3,
       "columnMapping": {
         "phone": "phone_number",
         "customer_name": "customer_name",
@@ -828,26 +964,35 @@
     "metrics": {
       "baseUploaded": 405,
       "callsInitiated": 405,
-      "callsConnected": 329,
-      "callsAnswered": 305,
-      "callsFailed": 76,
+      "callsConnected": 328,
+      "callsAnswered": 304,
+      "callsFailed": 77,
       "avgCallDuration": 40,
-      "totalCost": 709.96
+      "totalCost": 709.34
     },
-    "goal": {
-      "description": "Onboard new disbursements with a positive welcome call.",
-      "targetIntent": "interested_will_apply"
-    },
+    "description": "Onboard freshly-disbursed customers with a friendly welcome call.",
     "feedbackIntents": [
-      "interested_will_apply",
-      "application_submitted",
-      "call_me_later",
-      "not_interested"
+      {
+        "name": "Application submitted",
+        "description": "Customer submitted (or agreed to submit on call) the application form."
+      },
+      {
+        "name": "Interested — will apply",
+        "description": "Customer expressed clear interest and intends to apply."
+      },
+      {
+        "name": "Call me later",
+        "description": "Customer asked to be contacted again at a more convenient time."
+      },
+      {
+        "name": "Not interested",
+        "description": "Customer explicitly declined the offer or product."
+      }
     ],
     "createdBy": "user_001",
-    "createdAt": "2026-02-18T09:00:00.000Z",
-    "startedAt": "2026-02-20T09:00:00.000Z",
-    "completedAt": "2026-02-27T09:00:00.000Z"
+    "createdAt": "2026-01-28T09:00:00.000Z",
+    "startedAt": "2026-01-30T09:00:00.000Z",
+    "completedAt": "2026-02-06T09:00:00.000Z"
   },
   {
     "id": "camp_019",
@@ -857,11 +1002,11 @@
     "status": "inactive",
     "contactList": {
       "fileName": "festival_top_up_offer_holi_2026.csv",
-      "uploadedAt": "2026-03-15T16:00:00.000Z",
-      "totalRows": 1227,
+      "uploadedAt": "2026-04-28T11:00:00.000Z",
+      "totalRows": 1241,
       "validRows": 1200,
-      "invalidRows": 17,
-      "duplicates": 10,
+      "invalidRows": 34,
+      "duplicates": 7,
       "columnMapping": {
         "phone": "phone_number",
         "customer_name": "customer_name",
@@ -879,20 +1024,35 @@
     "metrics": {
       "baseUploaded": 1200,
       "callsInitiated": 1200,
-      "callsConnected": 950,
-      "callsAnswered": 874,
-      "callsFailed": 250,
+      "callsConnected": 951,
+      "callsAnswered": 875,
+      "callsFailed": 249,
       "avgCallDuration": 40,
-      "totalCost": 2079.09
+      "totalCost": 2080.93
     },
-    "goal": {
-      "description": "Surface qualified leads ready to apply for follow-up.",
-      "targetIntent": "application_submitted"
-    },
+    "description": "Surface qualified leads who are ready to apply for a follow-up offer.",
+    "feedbackIntents": [
+      {
+        "name": "Application submitted",
+        "description": "Customer submitted (or agreed to submit on call) the application form."
+      },
+      {
+        "name": "Interested — will apply",
+        "description": "Customer expressed clear interest and intends to apply."
+      },
+      {
+        "name": "Call me later",
+        "description": "Customer asked to be contacted again at a more convenient time."
+      },
+      {
+        "name": "Not interested",
+        "description": "Customer explicitly declined the offer or product."
+      }
+    ],
     "createdBy": "user_001",
-    "createdAt": "2026-03-12T09:00:00.000Z",
-    "startedAt": "2026-03-14T09:00:00.000Z",
-    "completedAt": "2026-03-19T09:00:00.000Z"
+    "createdAt": "2026-02-13T09:00:00.000Z",
+    "startedAt": "2026-02-15T09:00:00.000Z",
+    "completedAt": "2026-02-20T09:00:00.000Z"
   },
   {
     "id": "camp_020",
@@ -902,7 +1062,7 @@
     "status": "inactive",
     "contactList": {
       "fileName": "npa_restructure_outreach_q4_2025.csv",
-      "uploadedAt": "2026-04-15T16:00:00.000Z",
+      "uploadedAt": "2026-04-21T11:00:00.000Z",
       "totalRows": 197,
       "validRows": 190,
       "invalidRows": 5,
@@ -925,19 +1085,16 @@
       "baseUploaded": 190,
       "callsInitiated": 190,
       "callsConnected": 165,
-      "callsAnswered": 153,
+      "callsAnswered": 154,
       "callsFailed": 25,
       "avgCallDuration": 40,
-      "totalCost": 349.55
+      "totalCost": 353.45
     },
-    "goal": {
-      "description": "Recover dues — get the customer to commit to repayment or restructuring.",
-      "targetIntent": "payment_promised"
-    },
+    "description": "Reach dues-overdue customers and capture a path back to repayment.",
     "createdBy": "user_001",
-    "createdAt": "2026-02-24T09:00:00.000Z",
-    "startedAt": "2026-02-26T09:00:00.000Z",
-    "completedAt": "2026-03-03T09:00:00.000Z"
+    "createdAt": "2026-02-07T09:00:00.000Z",
+    "startedAt": "2026-02-09T09:00:00.000Z",
+    "completedAt": "2026-02-15T09:00:00.000Z"
   },
   {
     "id": "camp_021",
@@ -947,11 +1104,11 @@
     "status": "active",
     "contactList": {
       "fileName": "emi_reminder_may_2026.csv",
-      "uploadedAt": "2026-04-05T17:00:00.000Z",
-      "totalRows": 2226,
+      "uploadedAt": "2026-04-25T17:00:00.000Z",
+      "totalRows": 2240,
       "validRows": 2155,
-      "invalidRows": 49,
-      "duplicates": 22,
+      "invalidRows": 58,
+      "duplicates": 27,
       "columnMapping": {
         "phone": "phone_number",
         "customer_name": "customer_name",
@@ -964,7 +1121,7 @@
     },
     "schedule": {
       "type": "scheduled",
-      "startsAt": "2026-05-07T10:00:00.000Z",
+      "startsAt": "2026-05-06T10:00:00.000Z",
       "timezone": "Asia/Kolkata"
     },
     "metrics": {
@@ -976,8 +1133,9 @@
       "avgCallDuration": 0,
       "totalCost": 0
     },
+    "description": "Reach customers ahead of their EMI date to lock in payment commitments.",
     "createdBy": "user_001",
-    "createdAt": "2026-04-25T09:00:00.000Z"
+    "createdAt": "2026-04-27T09:00:00.000Z"
   },
   {
     "id": "camp_022",
@@ -987,11 +1145,11 @@
     "status": "active",
     "contactList": {
       "fileName": "kyc_pending_q2_sweep.csv",
-      "uploadedAt": "2026-04-16T18:00:00.000Z",
-      "totalRows": 614,
+      "uploadedAt": "2026-04-04T10:00:00.000Z",
+      "totalRows": 603,
       "validRows": 590,
-      "invalidRows": 20,
-      "duplicates": 4,
+      "invalidRows": 6,
+      "duplicates": 7,
       "columnMapping": {
         "phone": "phone_number",
         "customer_name": "customer_name",
@@ -1004,7 +1162,7 @@
     },
     "schedule": {
       "type": "scheduled",
-      "startsAt": "2026-05-11T10:00:00.000Z",
+      "startsAt": "2026-05-06T10:00:00.000Z",
       "timezone": "Asia/Kolkata"
     },
     "metrics": {
@@ -1016,8 +1174,9 @@
       "avgCallDuration": 0,
       "totalCost": 0
     },
+    "description": "Drive eKYC completion live on the call so disbursals can move forward.",
     "createdBy": "user_001",
-    "createdAt": "2026-04-27T09:00:00.000Z"
+    "createdAt": "2026-04-25T09:00:00.000Z"
   },
   {
     "id": "camp_023",
@@ -1027,11 +1186,11 @@
     "status": "active",
     "contactList": {
       "fileName": "cross_sell_pre_approved_top_up_may.csv",
-      "uploadedAt": "2026-03-11T11:00:00.000Z",
-      "totalRows": 1047,
+      "uploadedAt": "2026-04-22T12:00:00.000Z",
+      "totalRows": 1064,
       "validRows": 1025,
-      "invalidRows": 14,
-      "duplicates": 8,
+      "invalidRows": 29,
+      "duplicates": 10,
       "columnMapping": {
         "phone": "phone_number",
         "customer_name": "customer_name",
@@ -1044,7 +1203,7 @@
     },
     "schedule": {
       "type": "scheduled",
-      "startsAt": "2026-05-09T10:00:00.000Z",
+      "startsAt": "2026-05-06T10:00:00.000Z",
       "timezone": "Asia/Kolkata"
     },
     "metrics": {
@@ -1056,8 +1215,9 @@
       "avgCallDuration": 0,
       "totalCost": 0
     },
+    "description": "Surface qualified leads who are ready to apply for a follow-up offer.",
     "createdBy": "user_001",
-    "createdAt": "2026-04-24T09:00:00.000Z"
+    "createdAt": "2026-04-26T09:00:00.000Z"
   },
   {
     "id": "camp_024",
@@ -1067,7 +1227,7 @@
     "status": "inactive",
     "contactList": {
       "fileName": "emi_reminder_premium_tier_draft.csv",
-      "uploadedAt": "2026-04-14T18:00:00.000Z",
+      "uploadedAt": "2026-04-01T16:00:00.000Z",
       "totalRows": 0,
       "validRows": 0,
       "invalidRows": 0,
@@ -1095,8 +1255,9 @@
       "avgCallDuration": 0,
       "totalCost": 0
     },
+    "description": "Reach customers ahead of their EMI date to lock in payment commitments.",
     "createdBy": "user_001",
-    "createdAt": "2026-04-30T09:00:00.000Z"
+    "createdAt": "2026-04-29T09:00:00.000Z"
   },
   {
     "id": "camp_025",
@@ -1106,7 +1267,7 @@
     "status": "inactive",
     "contactList": {
       "fileName": "recovery_hardship_cases_draft.csv",
-      "uploadedAt": "2026-03-09T18:00:00.000Z",
+      "uploadedAt": "2026-03-31T16:00:00.000Z",
       "totalRows": 0,
       "validRows": 0,
       "invalidRows": 0,
@@ -1134,7 +1295,8 @@
       "avgCallDuration": 0,
       "totalCost": 0
     },
+    "description": "Resolve customer queries on this segment and capture next steps.",
     "createdBy": "user_001",
-    "createdAt": "2026-04-27T09:00:00.000Z"
+    "createdAt": "2026-04-30T09:00:00.000Z"
   }
 ]

@@ -44,7 +44,6 @@ import {
   SentimentDonut,
   DurationHistogram,
 } from '@/components/features/DistributionCharts';
-import { GoalBanner } from '@/components/features/GoalBanner';
 import { CallDetailDrawer } from '@/components/features/CallDetailDrawer';
 import {
   aggregate,
@@ -418,9 +417,6 @@ export default function Analytics({
           className="mb-6"
         />
       )}
-
-      {/* GOAL BANNER */}
-      <GoalBanner inScopeCampaigns={inScopeCampaigns} calls={calls} />
 
       {/* SECTION 1 — PERFORMANCE OVERVIEW */}
       <SectionHeading

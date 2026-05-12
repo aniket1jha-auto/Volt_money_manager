@@ -306,105 +306,110 @@ function zeroMetrics(baseUploaded = 0) {
 }
 
 /*
- * Pick a sensible goal for a campaign based on its name and kind.
- * Active + recent completed campaigns get goals so the Goal card
- * lights up across the demo. Draft / scheduled campaigns don't.
+ * Pick a plain-English description for a campaign based on its name.
+ * This was previously the "goal" copy — repurposed as the operator's
+ * description of what the campaign is for.
  */
-function makeGoal(name, kind) {
-  if (kind === 'draft' || kind === 'scheduled') return undefined;
-  // Skip ~30% of completed campaigns so the demo has a mix of "with"
-  // and "without" goal cases.
-  if (kind === 'completed' && rnd() < 0.3) return undefined;
-
+function makeDescription(name) {
   const lower = name.toLowerCase();
   if (lower.includes('emi reminder') || lower.includes('emi bounce')) {
-    return {
-      description: 'Lock in payment commitments before the EMI due date.',
-      targetIntent: 'payment_promised',
-    };
+    return 'Reach customers ahead of their EMI date to lock in payment commitments.';
   }
   if (lower.includes('loan recovery') || lower.includes('npa') || lower.includes('restructure')) {
-    return {
-      description: 'Recover dues — get the customer to commit to repayment or restructuring.',
-      targetIntent: 'payment_promised',
-    };
+    return 'Reach dues-overdue customers and capture a path back to repayment.';
   }
   if (lower.includes('kyc')) {
-    return {
-      description: 'Drive KYC completion live on the call so disbursals can move forward.',
-      targetIntent: 'kyc_completed_on_call',
-    };
+    return 'Drive eKYC completion live on the call so disbursals can move forward.';
   }
   if (lower.includes('application status')) {
-    return {
-      description: 'Reach every applicant and close out pending documentation.',
-      targetIntent: 'documents_requested',
-    };
+    return 'Reach pending applicants and close out outstanding documentation.';
   }
   if (lower.includes('cross-sell') || lower.includes('top-up') || lower.includes('renewal') || lower.includes('festival')) {
-    return {
-      description: 'Surface qualified leads ready to apply for follow-up.',
-      targetIntent: 'application_submitted',
-    };
+    return 'Surface qualified leads who are ready to apply for a follow-up offer.';
   }
   if (lower.includes('document reminder')) {
-    return {
-      description: 'Get pending documents off the customer.',
-      targetIntent: 'documents_requested',
-    };
+    return 'Chase pending documents from customers mid-application.';
   }
   if (lower.includes('welcome')) {
-    return {
-      description: 'Onboard new disbursements with a positive welcome call.',
-      targetIntent: 'interested_will_apply',
-    };
+    return 'Onboard freshly-disbursed customers with a friendly welcome call.';
   }
-  return {
-    description: 'Resolve customer queries and capture next steps.',
-    targetIntent: 'call_me_later',
-  };
+  return 'Resolve customer queries on this segment and capture next steps.';
 }
 
 /*
- * Pick the feedback intents (post-call outcomes) that an operator would
- * most likely want to track for this campaign type. The goal target is
- * always one of them; we add a few related ones for richer dashboards.
+ * Friendly intent labels + LLM-facing descriptions, keyed by the
+ * post-call outcome vocabulary. Used by the generator to populate the
+ * feedback-intents key/description pairs for each campaign.
  */
-function makeFeedbackIntents(name, kind, goal) {
+const INTENT_NAMES = {
+  payment_promised:        'Payment promised',
+  payment_already_done:    'Already paid',
+  kyc_completed_on_call:   'KYC completed on call',
+  documents_requested:     'Documents requested',
+  application_submitted:   'Application submitted',
+  interested_will_apply:   'Interested — will apply',
+  not_interested:          'Not interested',
+  call_me_later:           'Call me later',
+  complaint_raised:        'Complaint raised',
+  requesting_branch_visit: 'Will visit branch',
+};
+
+const INTENT_DESCRIPTIONS = {
+  payment_promised:        'Customer committed to making the payment by a specific date.',
+  payment_already_done:    'Customer says the payment has already been made (verify against records).',
+  kyc_completed_on_call:   'Customer completed eKYC verification during the call and is ready for the next step.',
+  documents_requested:     'Customer agreed to share or upload pending documents after the call.',
+  application_submitted:   'Customer submitted (or agreed to submit on call) the application form.',
+  interested_will_apply:   'Customer expressed clear interest and intends to apply.',
+  not_interested:          'Customer explicitly declined the offer or product.',
+  call_me_later:           'Customer asked to be contacted again at a more convenient time.',
+  complaint_raised:        'Customer raised a service complaint that needs follow-up by support.',
+  requesting_branch_visit: 'Customer prefers to handle the next step at a branch in person.',
+};
+
+/*
+ * Pick the feedback intents (post-call outcomes) that an operator would
+ * most likely want to track for this campaign type. Each intent carries
+ * a name + description used by the LLM to classify call outcomes.
+ */
+function makeFeedbackIntents(name, kind) {
   if (kind === 'draft' || kind === 'scheduled') return undefined;
   if (kind === 'completed' && rnd() < 0.4) return undefined;
 
   const lower = name.toLowerCase();
-  const out = new Set();
-  if (goal?.targetIntent) out.add(goal.targetIntent);
+  const keys = new Set();
 
   if (lower.includes('emi reminder') || lower.includes('emi bounce') || lower.includes('loan recovery') || lower.includes('npa') || lower.includes('restructure')) {
-    out.add('payment_promised');
-    out.add('payment_already_done');
-    out.add('call_me_later');
-    out.add('complaint_raised');
+    keys.add('payment_promised');
+    keys.add('payment_already_done');
+    keys.add('call_me_later');
+    keys.add('complaint_raised');
   } else if (lower.includes('kyc')) {
-    out.add('kyc_completed_on_call');
-    out.add('documents_requested');
-    out.add('requesting_branch_visit');
-    out.add('call_me_later');
+    keys.add('kyc_completed_on_call');
+    keys.add('documents_requested');
+    keys.add('requesting_branch_visit');
+    keys.add('call_me_later');
   } else if (lower.includes('cross-sell') || lower.includes('top-up') || lower.includes('renewal') || lower.includes('festival') || lower.includes('welcome')) {
-    out.add('application_submitted');
-    out.add('interested_will_apply');
-    out.add('call_me_later');
-    out.add('not_interested');
+    keys.add('application_submitted');
+    keys.add('interested_will_apply');
+    keys.add('call_me_later');
+    keys.add('not_interested');
   } else if (lower.includes('application status')) {
-    out.add('documents_requested');
-    out.add('application_submitted');
-    out.add('call_me_later');
+    keys.add('documents_requested');
+    keys.add('application_submitted');
+    keys.add('call_me_later');
   } else if (lower.includes('document')) {
-    out.add('documents_requested');
-    out.add('call_me_later');
+    keys.add('documents_requested');
+    keys.add('call_me_later');
   } else {
-    out.add('call_me_later');
-    out.add('not_interested');
+    keys.add('call_me_later');
+    keys.add('not_interested');
   }
-  return [...out];
+
+  return [...keys].map((k) => ({
+    name: INTENT_NAMES[k] ?? k,
+    description: INTENT_DESCRIPTIONS[k] ?? '',
+  }));
 }
 
 const campaigns = CAMPAIGN_TEMPLATES.map((tpl, i) => {
@@ -441,7 +446,6 @@ const campaigns = CAMPAIGN_TEMPLATES.map((tpl, i) => {
     schedule = { type: 'immediate', timezone: 'Asia/Kolkata' };
   }
 
-  const goal = makeGoal(tpl.name, kind);
   return {
     id,
     workspaceId: 'ws_volt',
@@ -451,8 +455,8 @@ const campaigns = CAMPAIGN_TEMPLATES.map((tpl, i) => {
     contactList,
     schedule,
     metrics,
-    goal,
-    feedbackIntents: makeFeedbackIntents(tpl.name, kind, goal),
+    description: makeDescription(tpl.name),
+    feedbackIntents: makeFeedbackIntents(tpl.name, kind),
     createdBy: 'user_001',
     createdAt,
     startedAt,

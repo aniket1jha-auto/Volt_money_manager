@@ -130,18 +130,18 @@ export const DEFAULT_RETRY_POLICY: RetryPolicy = {
 };
 
 /*
- * Campaign goal — captured at creation time. Two parts:
- *   - description: free-text purpose of the campaign
- *   - targetIntent: the customer-side intent that counts as "goal met"
- *     for a single answered call
- *
- * The Analytics page expresses progress as a % metric against answered
- * calls: count(answered calls where primaryIntent === targetIntent)
- * / count(answered calls). One campaign has one goal, or none.
+ * A feedback intent is a post-call outcome the operator wants to track
+ * for this campaign. Each entry is captured as:
+ *   - name:        short label shown in the UI and surfaced on analytics
+ *                  (e.g. "KYC completed on call")
+ *   - description: a longer plain-English explanation of what the
+ *                  intent means — handed to the backend LLM so it can
+ *                  classify each call's outcome against the operator's
+ *                  vocabulary instead of a generic one.
  */
-export interface CampaignGoal {
+export interface FeedbackIntent {
+  name: string;
   description: string;
-  targetIntent: string;
 }
 
 /*
@@ -176,15 +176,15 @@ export interface Campaign {
   /** Default retry policy applied to new runs. Optional — older
    *  campaigns may not have one set; UI defaults to DEFAULT_RETRY_POLICY. */
   retryPolicy?: RetryPolicy;
-  /** Operator-defined success metric. Optional. */
-  goal?: CampaignGoal;
+  /** Operator-authored description of what this campaign does — captured
+   *  at creation time, used for context (no analytics derived from it). */
+  description?: string;
   /**
-   * Intents the operator wants to actively track for this campaign —
-   * the "feedback loop". When set, analytics surfaces these as
-   * highlighted chips and computes how often the campaign hit any of
-   * them. Optional; defaults to empty.
+   * Post-call outcome intents the operator wants to track for this
+   * campaign. Each one carries a short name plus a longer description
+   * the backend LLM uses to classify call outcomes.
    */
-  feedbackIntents?: string[];
+  feedbackIntents?: FeedbackIntent[];
   createdBy: string;
   createdAt: string;
   startedAt?: string;

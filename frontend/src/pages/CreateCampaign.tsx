@@ -11,7 +11,7 @@ import {
 import type {
   ContactList,
   CampaignSchedule,
-  CampaignGoal,
+  FeedbackIntent,
   RetryPolicy,
 } from '@/types';
 import { DEFAULT_RETRY_POLICY } from '@/types';
@@ -21,10 +21,8 @@ import { useToast } from '@/components/ui/Toast';
 import { PageHeader } from '@/components/features/PageHeader';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
 import { Input, Label, HelperText } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
-import { Select } from '@/components/ui/Select';
 import { Radio } from '@/components/ui/Radio';
 import { FileDropzone } from '@/components/ui/FileDropzone';
 import { Modal } from '@/components/ui/Modal';
@@ -32,7 +30,6 @@ import { CsvMappingPanel } from '@/components/features/CsvMappingPanel';
 import { RetryPolicyEditor } from '@/components/features/RetryPolicyEditor';
 import { useCsvUpload, buildColumnMapping } from '@/lib/csvUpload';
 import { formatNumber, formatDateTime } from '@/lib/format';
-import { intentLabel, INTENT_LABEL } from '@/lib/labels';
 import { cn } from '@/lib/cn';
 
 type ScheduleType = 'immediate' | 'scheduled';
@@ -44,8 +41,7 @@ export default function CreateCampaign() {
 
   // Section 1
   const [name, setName] = useState('');
-  const [goalDescription, setGoalDescription] = useState('');
-  const [goalTargetIntent, setGoalTargetIntent] = useState<string>('payment_promised');
+  const [description, setDescription] = useState('');
 
   // Section 2 — CSV
   const upload = useCsvUpload();
@@ -55,8 +51,11 @@ export default function CreateCampaign() {
   const [scheduleType, setScheduleType] = useState<ScheduleType>('immediate');
   const [startsAt, setStartsAt] = useState('');
 
-  // Section 4 — feedback intents (which post-call outcomes to track)
-  const [feedbackIntents, setFeedbackIntents] = useState<string[]>([]);
+  // Section 4 — feedback intents (which post-call outcomes to track).
+  // Each entry has a short name plus a longer description used by the
+  // backend LLM to classify each call's outcome against the operator's
+  // vocabulary instead of a generic one.
+  const [feedbackIntents, setFeedbackIntents] = useState<FeedbackIntent[]>([]);
 
   // Section 5 — retry policy
   const [retryPolicy, setRetryPolicy] = useState<RetryPolicy>(DEFAULT_RETRY_POLICY);
@@ -94,10 +93,11 @@ export default function CreateCampaign() {
           ? { type: 'scheduled', startsAt: new Date(startsAt).toISOString(), timezone: activeWorkspace.timezone }
           : { type: 'immediate', timezone: activeWorkspace.timezone };
 
-      const goalText = goalDescription.trim();
-      const goal: CampaignGoal | undefined = goalText
-        ? { description: goalText, targetIntent: goalTargetIntent }
-        : undefined;
+      const cleanedIntents = feedbackIntents
+        .map((fi) => ({ name: fi.name.trim(), description: fi.description.trim() }))
+        .filter((fi) => fi.name.length > 0);
+
+      const trimmedDescription = description.trim();
 
       const created = await createCampaign(
         activeWorkspace.id,
@@ -110,11 +110,8 @@ export default function CreateCampaign() {
           contactList,
           schedule,
           retryPolicy,
-          goal,
-          feedbackIntents: (() => {
-            const cleaned = feedbackIntents.map((s) => s.trim()).filter(Boolean);
-            return cleaned.length ? cleaned : undefined;
-          })(),
+          description: trimmedDescription || undefined,
+          feedbackIntents: cleanedIntents.length ? cleanedIntents : undefined,
         },
       );
 
@@ -153,7 +150,7 @@ export default function CreateCampaign() {
 
       <div className="space-y-6 max-w-4xl">
         {/* 7.1 BASICS */}
-        <Section title="Campaign basics" description="Name the campaign and define what success looks like.">
+        <Section title="Campaign basics" description="Name the campaign and describe what it's for.">
           <div>
             <Label htmlFor="name" required>Campaign name</Label>
             <Input
@@ -167,37 +164,19 @@ export default function CreateCampaign() {
           </div>
 
           <div className="mt-5">
-            <Label htmlFor="goal">Goal</Label>
+            <Label htmlFor="description">Campaign description</Label>
             <Textarea
-              id="goal"
+              id="description"
               rows={2}
-              value={goalDescription}
-              onChange={(e) => setGoalDescription(e.target.value.slice(0, 200))}
-              placeholder="What does success look like? e.g. Lock in payment commitments before the EMI date."
-              maxLength={200}
+              value={description}
+              onChange={(e) => setDescription(e.target.value.slice(0, 240))}
+              placeholder="What is this campaign for? e.g. Outbound calls to remind customers about upcoming EMI due dates."
+              maxLength={240}
             />
             <HelperText>
-              {goalDescription.length}/200 — surfaces as a Goal card on the campaign's analytics view.
+              {description.length}/240 — a short, plain-English summary for context.
             </HelperText>
           </div>
-
-          {goalDescription.trim().length > 0 && (
-            <div className="mt-4">
-              <Label htmlFor="goal-target">Counts as goal met when call intent is</Label>
-              <Select
-                id="goal-target"
-                value={goalTargetIntent}
-                onChange={(e) => setGoalTargetIntent(e.target.value)}
-              >
-                {Object.keys(INTENT_LABEL).map((i) => (
-                  <option key={i} value={i}>{intentLabel(i)}</option>
-                ))}
-              </Select>
-              <HelperText>
-                Analytics will report % of answered calls that hit this intent.
-              </HelperText>
-            </div>
-          )}
         </Section>
 
         {/* 7.2 CONTACT LIST */}
@@ -346,18 +325,16 @@ export default function CreateCampaign() {
             }
           />
           <SummaryRow
-            term="Goal"
-            definition={
-              goalDescription.trim()
-                ? `${goalDescription.trim()} · met when intent is ${intentLabel(goalTargetIntent)}`
-                : 'Not set'
-            }
+            term="Description"
+            definition={description.trim() || 'Not set'}
           />
           <SummaryRow
             term="Feedback intents"
             definition={(() => {
-              const cleaned = feedbackIntents.map((s) => s.trim()).filter(Boolean);
-              return cleaned.length ? cleaned.join(' · ') : 'None';
+              const names = feedbackIntents
+                .map((fi) => fi.name.trim())
+                .filter(Boolean);
+              return names.length ? names.join(' · ') : 'None';
             })()}
           />
         </dl>
@@ -402,24 +379,39 @@ function SummaryRow({ term, definition }: { term: string; definition: ReactNode 
 }
 
 // ────────────────────────────────────────────────────────────────────
-// Feedback intents section — operator types in the post-call outcomes
-// they want to actively track. One input per row; "+ Add intent" adds
-// another row, "Remove" drops a row. Free text — operators may know
-// outcomes that are specific to their funnel.
+// Feedback intents section — operator declares the post-call outcomes
+// they want to track. Each row carries two fields:
+//   - Intent name        → short label surfaced in the UI / analytics
+//   - What this means    → longer explanation used by the backend LLM
+//                          to classify calls against this vocabulary
+//
+// "+ Add intent" appends a row; "Remove" drops it. Free text — every
+// operator's funnel is different.
 // ────────────────────────────────────────────────────────────────────
 interface FeedbackIntentsSectionProps {
-  value: string[];
-  onChange: (next: string[]) => void;
+  value: FeedbackIntent[];
+  onChange: (next: FeedbackIntent[]) => void;
 }
+
+const EMPTY_INTENT: FeedbackIntent = { name: '', description: '' };
 
 function FeedbackIntentsSection({ value, onChange }: FeedbackIntentsSectionProps) {
   // Always show at least one input row, even when nothing has been
   // typed yet. Empty rows are filtered out at submit time.
-  const rows = value.length > 0 ? value : [''];
+  const rows = value.length > 0 ? value : [EMPTY_INTENT];
 
-  const setRow = (i: number, v: string) => {
+  const isRowEmpty = (r: FeedbackIntent) =>
+    r.name.trim() === '' && r.description.trim() === '';
+
+  const setName = (i: number, v: string) => {
     const next = [...rows];
-    next[i] = v;
+    next[i] = { ...next[i], name: v };
+    onChange(next);
+  };
+
+  const setDescription = (i: number, v: string) => {
+    const next = [...rows];
+    next[i] = { ...next[i], description: v };
     onChange(next);
   };
 
@@ -427,7 +419,7 @@ function FeedbackIntentsSection({ value, onChange }: FeedbackIntentsSectionProps
     onChange(rows.filter((_, idx) => idx !== i));
   };
 
-  const addRow = () => onChange([...rows, '']);
+  const addRow = () => onChange([...rows, EMPTY_INTENT]);
 
   return (
     <Card padding="lg">
@@ -440,40 +432,59 @@ function FeedbackIntentsSection({ value, onChange }: FeedbackIntentsSectionProps
             Feedback intents
           </h3>
           <p className="text-sm text-text-tertiary mt-0.5">
-            Add the post-call outcomes you want to track closely.{' '}
-            <span className="text-text-secondary">
-              For example: <em className="not-italic font-medium">KYC completed on call</em>,{' '}
-              <em className="not-italic font-medium">Application submitted</em>,{' '}
-              <em className="not-italic font-medium">Call me later</em>.
-            </span>
+            Define the post-call outcomes you want to track. For each one,
+            give it a short name and explain what it means — the assistant
+            uses your explanation to classify every call against your
+            vocabulary.
           </p>
         </div>
       </div>
 
       <div className="space-y-3">
-        {rows.map((row, i) => (
-          <div key={i} className="flex items-center gap-3">
-            <Input
-              placeholder="e.g. KYC completed on call"
-              value={row}
-              onChange={(e) => setRow(i, e.target.value)}
-              className="flex-1"
-            />
-            <button
-              type="button"
-              onClick={() => removeRow(i)}
-              disabled={rows.length === 1 && row === ''}
-              className={cn(
-                'text-sm font-medium transition-colors shrink-0',
-                rows.length === 1 && row === ''
-                  ? 'text-text-tertiary opacity-40 cursor-not-allowed'
-                  : 'text-danger-700 hover:text-danger-500',
-              )}
+        {rows.map((row, i) => {
+          const empty = isRowEmpty(row) && rows.length === 1;
+          return (
+            <div
+              key={i}
+              className="rounded-md border border-border-subtle bg-slate-25/60 p-3 space-y-2.5"
             >
-              Remove
-            </button>
-          </div>
-        ))}
+              <div className="flex items-center gap-3">
+                <Input
+                  placeholder="Intent name — e.g. KYC Completed"
+                  value={row.name}
+                  onChange={(e) => setName(i, e.target.value.slice(0, 60))}
+                  className="flex-1 font-medium"
+                  maxLength={60}
+                />
+                <button
+                  type="button"
+                  onClick={() => removeRow(i)}
+                  disabled={empty}
+                  className={cn(
+                    'text-sm font-medium transition-colors shrink-0',
+                    empty
+                      ? 'text-text-tertiary opacity-40 cursor-not-allowed'
+                      : 'text-danger-700 hover:text-danger-500',
+                  )}
+                >
+                  Remove
+                </button>
+              </div>
+              <Textarea
+                rows={2}
+                placeholder="What does this intent mean? e.g. Customer completed eKYC verification during the call and is ready for disbursal."
+                value={row.description}
+                onChange={(e) => setDescription(i, e.target.value.slice(0, 240))}
+                maxLength={240}
+              />
+              <p className="text-[11px] text-text-tertiary">
+                Helps the assistant decide when a call counts as this outcome.
+                {' '}
+                <span className="tabular">{row.description.length}/240</span>
+              </p>
+            </div>
+          );
+        })}
       </div>
 
       <button

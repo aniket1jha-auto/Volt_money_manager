@@ -23,9 +23,9 @@ import type {
   User,
   VoiceAgent,
   Campaign,
-  CampaignGoal,
   CampaignRun,
   CampaignStatus,
+  FeedbackIntent,
   RetryPolicy,
   CallSummary,
   CallDetail,
@@ -197,8 +197,8 @@ export interface CampaignDraft {
   contactList: Campaign['contactList'];
   schedule: Campaign['schedule'];
   retryPolicy?: RetryPolicy;
-  goal?: CampaignGoal;
-  feedbackIntents?: string[];
+  description?: string;
+  feedbackIntents?: FeedbackIntent[];
 }
 export async function createCampaign(
   workspaceId: string,
@@ -216,7 +216,7 @@ export async function createCampaign(
     contactList: draft.contactList,
     schedule: draft.schedule,
     retryPolicy: draft.retryPolicy ?? DEFAULT_RETRY_POLICY,
-    goal: draft.goal,
+    description: draft.description,
     feedbackIntents: draft.feedbackIntents,
     metrics: {
       baseUploaded: draft.contactList.validRows,
