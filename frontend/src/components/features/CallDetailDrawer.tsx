@@ -5,6 +5,7 @@ import {
   PhoneIncoming,
   PhoneMissed,
   PhoneOff,
+  Sparkles,
 } from 'lucide-react';
 import type { CallSummary, CallDetail, Workspace } from '@/types';
 import { Drawer } from '@/components/ui/Drawer';
@@ -130,6 +131,24 @@ export function CallDetailDrawer({
             </div>
           )}
 
+          {/* Summary — LLM-generated, 1–2 sentence recap. Hidden when
+              the call has no insights (in-progress / failed). */}
+          {detail === undefined ? (
+            <SummarySkeleton />
+          ) : detail?.insights?.summary ? (
+            <div className="rounded-lg border border-border-subtle bg-gradient-to-br from-blue-50/40 to-brand-50/30 p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles size={13} className="text-brand-700" />
+                <h3 className="text-xs font-semibold uppercase tracking-[0.06em] text-text-tertiary">
+                  Summary
+                </h3>
+              </div>
+              <p className="text-sm text-text-primary leading-relaxed">
+                {detail.insights.summary}
+              </p>
+            </div>
+          ) : null}
+
           {/* Transcript */}
           <div>
             <div className="flex items-center justify-between mb-3">
@@ -187,6 +206,16 @@ function TranscriptSkeleton() {
       {[0, 1, 2, 3, 4].map((i) => (
         <Skeleton key={i} className="h-16 w-full" />
       ))}
+    </div>
+  );
+}
+
+function SummarySkeleton() {
+  return (
+    <div className="rounded-lg border border-border-subtle bg-slate-25 p-4">
+      <Skeleton className="h-3 w-20 mb-2.5" />
+      <Skeleton className="h-3.5 w-full mb-1.5" />
+      <Skeleton className="h-3.5 w-4/5" />
     </div>
   );
 }
