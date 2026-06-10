@@ -23,6 +23,11 @@ interface TableProps<T> {
   onRowClick?: (row: T) => void;
   /** sticky table header */
   stickyHeader?: boolean;
+  /**
+   * `'fixed'` honors column widths exactly (useful when you want equal
+   * percentage widths). Defaults to `'auto'` — content-driven sizing.
+   */
+  tableLayout?: 'auto' | 'fixed';
   className?: string;
   emptyText?: string;
 }
@@ -34,6 +39,7 @@ export function Table<T>({
   defaultSort,
   onRowClick,
   stickyHeader,
+  tableLayout = 'auto',
   className,
   emptyText = 'No rows',
 }: TableProps<T>) {
@@ -64,7 +70,7 @@ export function Table<T>({
   return (
     <div className={cn('rounded-xl border border-border-subtle overflow-hidden bg-surface shadow-card', className)}>
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full text-sm" style={{ tableLayout }}>
           <thead className={cn('bg-slate-25 border-b border-border-subtle text-xs', stickyHeader && 'sticky top-0 z-10')}>
             <tr>
               {columns.map((col) => {

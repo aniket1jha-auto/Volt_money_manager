@@ -368,6 +368,49 @@ const INTENT_DESCRIPTIONS = {
 };
 
 /*
+ * Pick a calling window for the campaign. Most campaigns follow the
+ * fintech default of 9:00–19:00 Mon–Sat (TRAI / RBI-friendly), with
+ * variation for product-type campaigns that need different hours.
+ */
+function makeCallingWindow(name) {
+  const lower = name.toLowerCase();
+  // EMI / recovery — earlier start and Mon–Sat to catch the customer.
+  if (lower.includes('emi') || lower.includes('recovery') || lower.includes('npa') || lower.includes('restructure')) {
+    return {
+      enabled: true,
+      days: [1, 2, 3, 4, 5, 6],
+      startTime: '09:00',
+      endTime: '19:00',
+    };
+  }
+  // KYC / onboarding — narrower business hours, weekdays only.
+  if (lower.includes('kyc') || lower.includes('welcome')) {
+    return {
+      enabled: true,
+      days: [1, 2, 3, 4, 5],
+      startTime: '10:00',
+      endTime: '18:00',
+    };
+  }
+  // Cross-sell / festival — broader window incl. Sat, lighter cadence.
+  if (lower.includes('cross-sell') || lower.includes('top-up') || lower.includes('renewal') || lower.includes('festival')) {
+    return {
+      enabled: true,
+      days: [1, 2, 3, 4, 5, 6],
+      startTime: '10:00',
+      endTime: '20:00',
+    };
+  }
+  // Sane default for everything else.
+  return {
+    enabled: true,
+    days: [1, 2, 3, 4, 5, 6],
+    startTime: '09:00',
+    endTime: '19:00',
+  };
+}
+
+/*
  * Pick the feedback intents (post-call outcomes) that an operator would
  * most likely want to track for this campaign type. Each intent carries
  * a name + description used by the LLM to classify call outcomes.
@@ -457,6 +500,7 @@ const campaigns = CAMPAIGN_TEMPLATES.map((tpl, i) => {
     metrics,
     description: makeDescription(tpl.name),
     feedbackIntents: makeFeedbackIntents(tpl.name, kind),
+    callingWindow: makeCallingWindow(tpl.name),
     createdBy: 'user_001',
     createdAt,
     startedAt,
@@ -850,6 +894,103 @@ const SUMMARY_TEMPLATES = {
   ],
 };
 
+/*
+ * Free-form key/value structured outputs the AI would extract per call.
+ * The set of keys is dynamic and contextual — campaign type + outcome
+ * shape what gets pulled. The UI humanizes the keys at render time
+ * (snake_case → "Title case"), so all that matters here is producing
+ * realistic slot names and short string values.
+ */
+function makeCustomIntents(campaignName, intent, sentiment, durationSec) {
+  const lower = campaignName.toLowerCase();
+  const out = {};
+
+  // Universal — every answered call gets one of these
+  out.social_media_mention = rnd() < 0.18
+    ? pick(['Yes - Twitter complaint', 'Yes - WhatsApp group', 'Yes - Instagram review'])
+    : 'No';
+
+  // Drop-off only makes sense on a short or abandoned-ish call
+  if (durationSec > 0 && durationSec < 30) {
+    out.drop_off_reason = pick([
+      'Customer hung up',
+      'Network drop',
+      'Asked to call back',
+      'Not stated',
+    ]);
+  }
+
+  // Campaign-specific extractions
+  if (lower.includes('emi') || lower.includes('recovery') || lower.includes('npa') || lower.includes('restructure')) {
+    if (intent !== 'payment_promised' && intent !== 'payment_already_done') {
+      out.payment_blocker = pick([
+        'Cash flow issue',
+        'Bank account closed',
+        'Disputed amount',
+        'Awaiting salary credit',
+        'Not stated',
+      ]);
+    }
+    if (rnd() < 0.35) {
+      out.competitor_mentioned = pick(['No', 'Yes - HDFC', 'Yes - SBI', 'Yes - Axis']);
+    }
+    if (rnd() < 0.4) {
+      out.callback_preference = pick([
+        'Tomorrow morning',
+        'After 6 PM',
+        'This weekend',
+        'Not stated',
+      ]);
+    }
+  } else if (lower.includes('kyc')) {
+    if (intent !== 'kyc_completed_on_call') {
+      out.kyc_blocker = pick([
+        'Document not available',
+        'Video KYC tech issue',
+        'Customer hesitant',
+        'Phone not supported',
+        'Not stated',
+      ]);
+    }
+    out.preferred_kyc_channel = pick(['Branch visit', 'Video KYC', 'App self-service']);
+  } else if (lower.includes('cross-sell') || lower.includes('top-up') || lower.includes('renewal') || lower.includes('festival')) {
+    out.urgency = sentiment === 'positive' ? 'High' : sentiment === 'neutral' ? 'Medium' : 'Low';
+    if (rnd() < 0.4) {
+      out.decision_maker = pick(['Self', 'Spouse', 'Father', 'Family group']);
+    }
+    if (rnd() < 0.35) {
+      out.competitor_mentioned = pick(['No', 'Yes - HDFC', 'Yes - SBI', 'Yes - Axis']);
+    }
+  } else if (lower.includes('welcome') || lower.includes('document')) {
+    out.preferred_communication = pick(['WhatsApp', 'SMS', 'Phone call', 'Email']);
+    if (rnd() < 0.3) {
+      out.english_proficiency = pick(['Fluent', 'Basic', 'Hindi preferred']);
+    }
+  }
+
+  // Outcome-specific extractions
+  if (intent === 'complaint_raised') {
+    out.complaint_topic = pick([
+      'App not working',
+      'Wrong charge',
+      'Agent rude',
+      'Disbursal delay',
+      'KYC delay',
+    ]);
+  }
+
+  if (intent === 'call_me_later' && !out.callback_preference) {
+    out.callback_preference = pick([
+      'Tomorrow morning',
+      'After 6 PM',
+      'This weekend',
+      'Not stated',
+    ]);
+  }
+
+  return out;
+}
+
 function buildSummary(intent, name, amountFmt, dueDate) {
   const templates = SUMMARY_TEMPLATES[intent];
   if (!templates || templates.length === 0) {
@@ -1047,6 +1188,7 @@ function makeCall(campaign, agent, idx, dayOffset) {
       summary,
       outcome,
       toolCalls: toolCallsFor(intent, transcript),
+      customIntents: makeCustomIntents(campaign.name, intent, sentiment, duration),
     },
     reviewed: rnd() < 0.12,
     flagged: rnd() < 0.04,

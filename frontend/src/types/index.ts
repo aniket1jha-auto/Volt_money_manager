@@ -130,6 +130,37 @@ export const DEFAULT_RETRY_POLICY: RetryPolicy = {
 };
 
 /*
+ * Calling window — the daily band during which the dialer is allowed to
+ * place calls. Works on top of the schedule:
+ *   - schedule.type === 'immediate' → start at launch, but calls only
+ *     flow inside the window. If launch happens outside the window, the
+ *     campaign waits until the next opening.
+ *   - schedule.type === 'scheduled' → activate at startsAt; calls still
+ *     respect the window (e.g. a Sunday-scheduled launch waits until
+ *     the next allowed day if Sunday isn't in `days`).
+ *
+ * Times are 24-hour "HH:MM" strings, interpreted in the workspace's
+ * timezone. Days follow JS `Date#getDay` (0 = Sun … 6 = Sat).
+ */
+export type DayOfWeek = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+
+export interface CallingWindow {
+  enabled: boolean;
+  days: DayOfWeek[];
+  /** Inclusive lower bound, e.g. "09:00". */
+  startTime: string;
+  /** Exclusive upper bound, e.g. "19:00". */
+  endTime: string;
+}
+
+export const DEFAULT_CALLING_WINDOW: CallingWindow = {
+  enabled: true,
+  days: [1, 2, 3, 4, 5, 6], // Mon–Sat
+  startTime: '09:00',
+  endTime: '19:00',
+};
+
+/*
  * A feedback intent is a post-call outcome the operator wants to track
  * for this campaign. Each entry is captured as:
  *   - name:        short label shown in the UI and surfaced on analytics
@@ -159,6 +190,9 @@ export interface CampaignRun {
   schedule: CampaignSchedule;
   /** Snapshot of the retry policy in force when this run was started. */
   retryPolicy: RetryPolicy;
+  /** Snapshot of the calling window in force when this run was started.
+   *  Optional — older runs may not have one captured. */
+  callingWindow?: CallingWindow;
   startedBy: string;                          // user id
   startedAt: string;                          // ISO 8601
   status: CampaignRunStatus;
@@ -176,6 +210,10 @@ export interface Campaign {
   /** Default retry policy applied to new runs. Optional — older
    *  campaigns may not have one set; UI defaults to DEFAULT_RETRY_POLICY. */
   retryPolicy?: RetryPolicy;
+  /** Daily allowed-time band during which calls are placed. Optional —
+   *  older campaigns may not have one; UI defaults to
+   *  DEFAULT_CALLING_WINDOW. */
+  callingWindow?: CallingWindow;
   /** Operator-authored description of what this campaign does — captured
    *  at creation time, used for context (no analytics derived from it). */
   description?: string;
@@ -251,6 +289,15 @@ export interface CallInsights {
   summary: string;
   outcome: string;
   toolCalls: ToolCall[];
+  /**
+   * Free-form key/value structured outputs the AI extracted from the
+   * call. Keys are snake_case (e.g. `social_media_mention`,
+   * `drop_off_reason`) — the UI humanizes them to "Social media
+   * mention" / "Drop off reason" for display. Values are short strings.
+   * The set of keys is dynamic per call; the drawer renders whatever
+   * keys are present.
+   */
+  customIntents?: Record<string, string>;
 }
 
 export interface CallRecording {

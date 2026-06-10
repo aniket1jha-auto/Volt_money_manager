@@ -2,20 +2,20 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useNavigate, useSearchParams, useParams } from 'react-router-dom';
 import {
   Search,
+  Download,
   Play,
   ChevronRight,
   Users,
-  PhoneOutgoing,
   PhoneCall,
   PhoneIncoming,
   PhoneOff,
   Clock,
   TrendingUp,
-  Smile,
 } from 'lucide-react';
 import type {
   Campaign,
   CallSummary,
+  CallStatus,
   VoiceAgent,
   Workspace,
   FailureReason,
@@ -24,10 +24,10 @@ import { getCampaigns, getCalls, getVoiceAgents } from '@/lib/api';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { PageHeader } from '@/components/features/PageHeader';
 import { Card } from '@/components/ui/Card';
-import { Input } from '@/components/ui/Input';
 import { KpiTile } from '@/components/ui/KpiTile';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
+import { Input } from '@/components/ui/Input';
 import { MultiSelect, FilterChip } from '@/components/ui/MultiSelect';
 import {
   DateRangeFilter,
@@ -36,7 +36,6 @@ import {
 } from '@/components/ui/DateRangeFilter';
 import { Pagination } from '@/components/ui/Pagination';
 import { Table, type TableColumn } from '@/components/ui/Table';
-import { Badge } from '@/components/ui/Badge';
 import { CallStatusBadge } from '@/components/features/StatusBadge';
 import { TrendChart } from '@/components/features/TrendChart';
 import {
@@ -57,10 +56,8 @@ import {
 import {
   formatNumber,
   formatPercent,
-  formatDate,
   formatDuration,
   formatPhone,
-  formatTime,
 } from '@/lib/format';
 import { intentLabel, failureReasonLabel } from '@/lib/labels';
 import { cn } from '@/lib/cn';
@@ -94,7 +91,6 @@ function bucketFromRange(range: [number, number]): DurationBucket {
   );
 }
 
-type Sentiment = 'positive' | 'neutral' | 'negative';
 
 interface AnalyticsProps {
   /** When set, this becomes a single-campaign view (Campaign Detail). */
@@ -148,11 +144,7 @@ export default function Analytics({
   const [campaignIds, setCampaignIds] = useState<string[]>(
     fixedCampaignId ? [fixedCampaignId] : [],
   );
-  const [intents, setIntents] = useState<string[]>(() => {
-    const fromQuery = params.get('intent');
-    return fromQuery ? [fromQuery] : [];
-  });
-  const [sentiments, setSentiments] = useState<Sentiment[]>([]);
+  const [statuses, setStatuses] = useState<CallStatus[]>([]);
   const [durationRange, setDurationRange] = useState<[number, number]>(DURATION_DOMAIN);
   const [phoneSearchInput, setPhoneSearchInput] = useState('');
   const [phoneSearch, setPhoneSearch] = useState('');
@@ -163,15 +155,15 @@ export default function Analytics({
 
   // Strip query params from the URL after applying.
   useEffect(() => {
-    if (params.has('intent') || params.has('failure')) {
-      params.delete('intent');
+    if (params.has('failure')) {
       params.delete('failure');
       setParams(params, { replace: true });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Phone search debounce
+  // Phone search debounce — typed input drives the actual filter via a
+  // 200 ms debounce so the table doesn't re-filter on every keystroke.
   useEffect(() => {
     const t = setTimeout(() => setPhoneSearch(phoneSearchInput.trim()), 200);
     return () => clearTimeout(t);
@@ -180,8 +172,7 @@ export default function Analytics({
   // Pagination — reset whenever filters change.
   const [page, setPage] = useState(1);
   useEffect(() => { setPage(1); }, [
-    campaignIds, intents, sentiments, durationRange,
-    phoneSearch, range, failureFilter,
+    campaignIds, statuses, durationRange, phoneSearch, range, failureFilter,
   ]);
 
   // ── Data state ─────────────────────────────────────────────────────
@@ -238,12 +229,11 @@ export default function Analytics({
   }, [activeWorkspace, campaignIds, fromIso, toIso, reloadTick, refreshKey]);
 
   // ── Derived ────────────────────────────────────────────────────────
-  // Apply local filters (intent / sentiment / duration / phone / failure).
+  // Apply local filters (status / duration / phone / failure).
   const calls = useMemo(() => {
     if (!serverCalls) return null;
     return serverCalls.filter((c) => {
-      if (intents.length > 0 && (!c.primaryIntent || !intents.includes(c.primaryIntent))) return false;
-      if (sentiments.length > 0 && (!c.sentiment || !sentiments.includes(c.sentiment))) return false;
+      if (statuses.length > 0 && !statuses.includes(c.status)) return false;
       if (c.duration < durationRange[0]) return false;
       if (durationRange[1] < DURATION_DOMAIN[1] && c.duration > durationRange[1]) return false;
       if (phoneSearch) {
@@ -253,7 +243,7 @@ export default function Analytics({
       if (failureFilter && c.failureReason !== failureFilter) return false;
       return true;
     });
-  }, [serverCalls, intents, sentiments, durationRange, phoneSearch, failureFilter]);
+  }, [serverCalls, statuses, durationRange, phoneSearch, failureFilter]);
 
   // Performance overview is computed across the FULL filtered set
   // (initiated + answered + failed all matter for funnel rates).
@@ -291,21 +281,6 @@ export default function Analytics({
     [inScopeCampaigns],
   );
 
-  // Intent options surfaced from the current data (with the canonical
-  // vocabulary added in case a value isn't in the slice).
-  const intentOptions = useMemo(() => {
-    const seen = new Set<string>();
-    for (const c of serverCalls ?? []) if (c.primaryIntent) seen.add(c.primaryIntent);
-    const fixed = [
-      'loan_inquiry','emi_status','repayment_intent','payment_promise',
-      'kyc_pending','application_status','callback_request','document_request',
-      'balance_inquiry','renewal_inquiry','complaint','dispute_charge',
-      'financial_hardship','wrong_number','agent_handoff_request',
-    ];
-    const final = new Set<string>([...fixed, ...seen]);
-    return [...final].map((i) => ({ value: i, label: intentLabel(i) }));
-  }, [serverCalls]);
-
   // ── Drawer ─────────────────────────────────────────────────────────
   const [selectedId, setSelectedId] = useState<string | null>(callId ?? null);
   useEffect(() => {
@@ -328,8 +303,7 @@ export default function Analytics({
   // ── Filter helpers ─────────────────────────────────────────────────
   const filtersActive =
     (!fixedCampaignId && campaignIds.length > 0) ||
-    intents.length > 0 ||
-    sentiments.length > 0 ||
+    statuses.length > 0 ||
     durationRange[0] !== DURATION_DOMAIN[0] ||
     durationRange[1] !== DURATION_DOMAIN[1] ||
     phoneSearchInput.length > 0 ||
@@ -338,8 +312,7 @@ export default function Analytics({
 
   function clearAll() {
     if (!fixedCampaignId) setCampaignIds([]);
-    setIntents([]);
-    setSentiments([]);
+    setStatuses([]);
     setDurationRange(DURATION_DOMAIN);
     setPhoneSearchInput('');
     setRange({ preset: '30d' });
@@ -352,14 +325,6 @@ export default function Analytics({
   const tableRows = calls ?? [];
   const tableTotal = tableRows.length;
   const pageRows = tableRows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-
-  const sMixPctBar = sentimentMix && sentimentMix.total > 0
-    ? [
-        { tone: 'positive' as const, w: (sentimentMix.positive / sentimentMix.total) * 100 },
-        { tone: 'neutral'  as const, w: (sentimentMix.neutral  / sentimentMix.total) * 100 },
-        { tone: 'negative' as const, w: (sentimentMix.negative / sentimentMix.total) * 100 },
-      ]
-    : null;
 
   return (
     <>
@@ -443,7 +408,6 @@ export default function Analytics({
       <ConversationKpis
         ans={ans}
         topIntent={topIntent}
-        sMixPctBar={sMixPctBar}
         workspace={activeWorkspace}
       />
 
@@ -451,7 +415,6 @@ export default function Analytics({
         <IntentBars
           items={intentItems}
           loading={answered === null}
-          onSelect={(i) => setIntents([i])}
         />
         <SentimentDonut
           mix={sentimentMix ?? { positive: 0, neutral: 0, negative: 0, total: 0 }}
@@ -477,15 +440,13 @@ export default function Analytics({
         pageSize={PAGE_SIZE}
         onPageChange={setPage}
         onRowClick={(c) => openCall(c.id)}
-        phoneSearchInput={phoneSearchInput}
-        onPhoneSearchChange={setPhoneSearchInput}
-        intents={intents}
-        onIntentsChange={setIntents}
-        intentOptions={intentOptions}
-        sentiments={sentiments}
-        onSentimentsChange={setSentiments}
+        statuses={statuses}
+        onStatusesChange={setStatuses}
         durationRange={durationRange}
         onDurationChange={setDurationRange}
+        phoneSearchInput={phoneSearchInput}
+        onPhoneSearchChange={setPhoneSearchInput}
+        onExport={() => exportCallsCsv(calls ?? [])}
         workspace={activeWorkspace}
       />
 
@@ -546,10 +507,9 @@ function PerformanceKpis({
   workspace: Workspace;
 }) {
   const loading = metrics === null;
-  const initiatedShare = baseUploaded > 0 && metrics ? metrics.initiated / baseUploaded : 0;
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
       <KpiTile
         loading={loading}
         label="Total Base"
@@ -557,14 +517,6 @@ function PerformanceKpis({
         tone="neutral"
         value={formatNumber(baseUploaded, workspace)}
         breakdown="contacts uploaded"
-      />
-      <KpiTile
-        loading={loading}
-        label="Initiated"
-        icon={<PhoneOutgoing size={14} />}
-        tone="brand"
-        value={metrics ? formatNumber(metrics.initiated, workspace) : '—'}
-        breakdown={baseUploaded > 0 ? `${formatPercent(initiatedShare, 1)} of base` : undefined}
       />
       <KpiTile
         loading={loading}
@@ -600,24 +552,14 @@ function PerformanceKpis({
 function ConversationKpis({
   ans,
   topIntent,
-  sMixPctBar,
   workspace,
 }: {
   ans: AggregateMetrics | null;
   topIntent?: { intent: string; count: number; share: number };
-  sMixPctBar: { tone: 'positive' | 'neutral' | 'negative'; w: number }[] | null;
   workspace: Workspace;
 }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-      <KpiTile
-        loading={ans === null}
-        label="Calls Answered"
-        icon={<PhoneIncoming size={14} />}
-        tone="brand"
-        value={ans ? formatNumber(ans.answered, workspace) : '—'}
-        breakdown="answered in scope"
-      />
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
       <KpiTile
         loading={ans === null}
         label="Avg Call Duration"
@@ -636,41 +578,6 @@ function ConversationKpis({
           ? `${formatNumber(topIntent.count, workspace)} · ${formatPercent(topIntent.share, 1)}`
           : undefined}
       />
-      <Card padding="md" className="relative overflow-hidden">
-        <div className="flex items-center justify-between gap-2">
-          <div className="text-[11px] font-semibold uppercase tracking-wider text-text-tertiary">
-            Sentiment Mix
-          </div>
-          <span className="h-7 w-7 rounded-md bg-success-50 text-success-700 flex items-center justify-center">
-            <Smile size={14} />
-          </span>
-        </div>
-        {sMixPctBar ? (
-          <>
-            <div className="mt-3 mb-2 flex h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
-              {sMixPctBar.map((s) => (
-                <span
-                  key={s.tone}
-                  className={cn(
-                    'h-full',
-                    s.tone === 'positive' ? 'bg-success-500' :
-                    s.tone === 'neutral'  ? 'bg-slate-400'  :
-                                            'bg-danger-500',
-                  )}
-                  style={{ width: `${s.w}%` }}
-                />
-              ))}
-            </div>
-            <div className="flex items-center justify-between text-xs tabular text-text-tertiary">
-              <span><span className="text-success-700 font-semibold">{Math.round(sMixPctBar[0].w)}%</span> pos</span>
-              <span><span className="text-text-secondary font-semibold">{Math.round(sMixPctBar[1].w)}%</span> neu</span>
-              <span><span className="text-danger-700 font-semibold">{Math.round(sMixPctBar[2].w)}%</span> neg</span>
-            </div>
-          </>
-        ) : (
-          <div className="mt-3 text-sm text-text-tertiary">No data</div>
-        )}
-      </Card>
     </div>
   );
 }
@@ -687,15 +594,13 @@ function CallsSection({
   onPageChange,
   onRowClick,
   workspace,
-  phoneSearchInput,
-  onPhoneSearchChange,
-  intents,
-  onIntentsChange,
-  intentOptions,
-  sentiments,
-  onSentimentsChange,
+  statuses,
+  onStatusesChange,
   durationRange,
   onDurationChange,
+  phoneSearchInput,
+  onPhoneSearchChange,
+  onExport,
 }: {
   loading: boolean;
   rows: CallSummary[];
@@ -705,79 +610,47 @@ function CallsSection({
   onPageChange: (p: number) => void;
   onRowClick: (call: CallSummary) => void;
   workspace: Workspace;
-  phoneSearchInput: string;
-  onPhoneSearchChange: (v: string) => void;
-  intents: string[];
-  onIntentsChange: (v: string[]) => void;
-  intentOptions: { value: string; label: string }[];
-  sentiments: Sentiment[];
-  onSentimentsChange: (v: Sentiment[]) => void;
+  statuses: CallStatus[];
+  onStatusesChange: (v: CallStatus[]) => void;
   durationRange: [number, number];
   onDurationChange: (r: [number, number]) => void;
+  phoneSearchInput: string;
+  onPhoneSearchChange: (v: string) => void;
+  onExport: () => void;
 }) {
   const start = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const end = Math.min(total, page * pageSize);
 
+  // Equal-share data columns. With `tableLayout="fixed"` on the Table,
+  // these percentages are honored exactly, so the 4 data columns line up
+  // evenly and the chevron stays narrow on the right.
   const cols: TableColumn<CallSummary>[] = [
     {
-      key: 'time',
-      header: 'Time',
-      cell: (c) => (
-        <div className="text-sm">
-          <div className="text-text-primary tabular">{formatTime(c.initiatedAt, workspace)}</div>
-          <div className="text-xs text-text-tertiary">{formatDate(c.initiatedAt, workspace)}</div>
-        </div>
-      ),
-      sort: (a, b) => (a.initiatedAt < b.initiatedAt ? -1 : 1),
-      width: 130,
-    },
-    {
       key: 'phone',
-      header: 'Phone',
+      header: 'Phone number',
       cell: (c) => <span className="font-mono text-xs tabular">{formatPhone(c.phoneNumber)}</span>,
-      width: 170,
+      width: '24%',
     },
     {
       key: 'customer',
-      header: 'Customer',
+      header: 'Customer name',
       cell: (c) => <span className="text-sm truncate">{c.customerName ?? '—'}</span>,
-      width: 160,
+      width: '24%',
     },
     {
       key: 'duration',
-      header: 'Duration',
-      align: 'right',
+      header: 'Call duration',
       cell: (c) => c.status === 'in_progress'
         ? <AwaitingPill compact />
         : <span className="tabular">{formatDuration(c.duration)}</span>,
       sort: (a, b) => a.duration - b.duration,
-      width: 90,
-    },
-    {
-      key: 'intent',
-      header: 'Intent',
-      cell: (c) => {
-        if (c.status === 'in_progress') return <AwaitingPill />;
-        if (c.primaryIntent) return <Badge tone="brand">{intentLabel(c.primaryIntent)}</Badge>;
-        return <span className="text-text-tertiary text-xs">—</span>;
-      },
-      width: 160,
-    },
-    {
-      key: 'sentiment',
-      header: 'Sentiment',
-      cell: (c) => {
-        if (c.status === 'in_progress') return <AwaitingPill />;
-        if (c.sentiment) return <SentimentChip s={c.sentiment} />;
-        return <span className="text-text-tertiary text-xs">—</span>;
-      },
-      width: 110,
+      width: '24%',
     },
     {
       key: 'status',
       header: 'Status',
       cell: (c) => <CallStatusBadge status={c.status} />,
-      width: 110,
+      width: '24%',
     },
     {
       key: 'chevron',
@@ -798,8 +671,13 @@ function CallsSection({
           />
         </div>
       ),
-      width: 56,
+      width: '4%',
     },
+  ];
+
+  const STATUS_OPTIONS: { value: CallStatus; label: string }[] = [
+    { value: 'answered', label: 'Answered' },
+    { value: 'failed',   label: 'Failed'   },
   ];
 
   return (
@@ -814,23 +692,11 @@ function CallsSection({
           />
         </div>
         <MultiSelect
-          options={intentOptions}
-          value={intents}
-          onChange={onIntentsChange}
-          allLabel="All intents"
-          noun="intents"
-          menuMinWidth={240}
-        />
-        <MultiSelect
-          options={[
-            { value: 'positive', label: 'Positive' },
-            { value: 'neutral',  label: 'Neutral'  },
-            { value: 'negative', label: 'Negative' },
-          ]}
-          value={sentiments}
-          onChange={(v) => onSentimentsChange(v as Sentiment[])}
-          allLabel="All sentiments"
-          noun="sentiments"
+          options={STATUS_OPTIONS}
+          value={statuses}
+          onChange={(v) => onStatusesChange(v as CallStatus[])}
+          allLabel="All statuses"
+          noun="statuses"
           searchable={false}
         />
         <DurationSelect value={durationRange} onChange={onDurationChange} />
@@ -840,12 +706,26 @@ function CallsSection({
             ? 'Loading…'
             : `Showing ${start.toLocaleString('en-IN')}–${end.toLocaleString('en-IN')} of ${total.toLocaleString('en-IN')} calls`}
         </span>
+        <button
+          type="button"
+          onClick={onExport}
+          disabled={loading || total === 0}
+          title="Download the filtered call list as a CSV"
+          className={cn(
+            'inline-flex items-center gap-1.5 h-9 px-3 rounded-md text-xs font-medium transition-colors',
+            'border border-border-medium bg-surface',
+            'text-text-secondary hover:text-text-primary hover:bg-slate-50',
+            'disabled:opacity-50 disabled:cursor-not-allowed',
+          )}
+        >
+          <Download size={13} /> Export CSV
+        </button>
       </div>
       <Table
         columns={cols}
         rows={rows}
         rowKey={(r) => r.id}
-        defaultSort={{ key: 'time', dir: 'desc' }}
+        tableLayout="fixed"
         onRowClick={onRowClick}
         emptyText={loading ? 'Loading calls…' : 'No calls match your filters.'}
       />
@@ -861,9 +741,68 @@ function CallsSection({
   );
 }
 
-function SentimentChip({ s }: { s: Sentiment }) {
-  const tone = s === 'positive' ? 'success' : s === 'negative' ? 'danger' : 'neutral';
-  return <Badge tone={tone}>{s.charAt(0).toUpperCase() + s.slice(1)}</Badge>;
+// ────────────────────────────────────────────────────────────────────
+// CSV export — pulls the four table-visible fields and triggers a
+// download. Operates on the full filtered set (not just the visible
+// page), so the file matches what the operator currently has in view.
+// ────────────────────────────────────────────────────────────────────
+function exportCallsCsv(calls: CallSummary[]) {
+  const rows: string[][] = [
+    ['Phone number', 'Customer name', 'Call duration', 'Status'],
+    ...calls.map((c) => [
+      c.phoneNumber,
+      c.customerName ?? '',
+      durationToHms(c.duration),
+      statusToLabel(c.status),
+    ]),
+  ];
+  const csv = rows.map(formatCsvRow).join('\n');
+  // Add a BOM so Excel opens UTF-8 cleanly.
+  const blob = new Blob(['﻿', csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const stamp = new Date().toISOString().slice(0, 10);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `calls-${stamp}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  // Free the URL on the next tick — Safari needs the anchor click to
+  // resolve first.
+  setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+function formatCsvRow(values: string[]): string {
+  return values.map(escapeCsvCell).join(',');
+}
+
+function escapeCsvCell(value: string): string {
+  // Quote when the cell contains a comma, quote, newline, or starts with
+  // a character that Excel might interpret as a formula.
+  if (/[",\r\n]/.test(value) || /^[=+\-@]/.test(value)) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+  return value;
+}
+
+function durationToHms(seconds: number): string {
+  if (!seconds || seconds < 0) return '';
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+function statusToLabel(status: CallStatus): string {
+  switch (status) {
+    case 'in_progress': return 'In progress';
+    case 'answered':    return 'Answered';
+    case 'completed':   return 'Completed';
+    case 'failed':      return 'Failed';
+    case 'abandoned':   return 'Abandoned';
+    case 'initiated':   return 'Initiated';
+    case 'ringing':     return 'Ringing';
+    case 'connected':   return 'Connected';
+  }
 }
 
 /** Compact placeholder used in cells while a call is still in progress

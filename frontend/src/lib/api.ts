@@ -25,6 +25,7 @@ import type {
   Campaign,
   CampaignRun,
   CampaignStatus,
+  CallingWindow,
   FeedbackIntent,
   RetryPolicy,
   CallSummary,
@@ -33,7 +34,7 @@ import type {
   AudienceFile,
   AudienceFileStatus,
 } from '@/types';
-import { DEFAULT_RETRY_POLICY } from '@/types';
+import { DEFAULT_RETRY_POLICY, DEFAULT_CALLING_WINDOW } from '@/types';
 
 // ────────────────────────────────────────────────────────────────────
 // Latency + fault simulator.
@@ -197,6 +198,7 @@ export interface CampaignDraft {
   contactList: Campaign['contactList'];
   schedule: Campaign['schedule'];
   retryPolicy?: RetryPolicy;
+  callingWindow?: CallingWindow;
   description?: string;
   feedbackIntents?: FeedbackIntent[];
 }
@@ -216,6 +218,7 @@ export async function createCampaign(
     contactList: draft.contactList,
     schedule: draft.schedule,
     retryPolicy: draft.retryPolicy ?? DEFAULT_RETRY_POLICY,
+    callingWindow: draft.callingWindow ?? DEFAULT_CALLING_WINDOW,
     description: draft.description,
     feedbackIntents: draft.feedbackIntents,
     metrics: {
@@ -271,6 +274,9 @@ export async function startCampaignRun(
     contactList: draft.contactList,
     schedule: draft.schedule,
     retryPolicy: draft.retryPolicy,
+    // Snapshot the campaign's current calling window so the run record
+    // reflects what was in force at start time.
+    callingWindow: camp.callingWindow ?? DEFAULT_CALLING_WINDOW,
     startedBy: 'user_001',
     startedAt: new Date().toISOString(),
     status: draft.schedule.type === 'scheduled' ? 'queued' : 'running',

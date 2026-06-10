@@ -11,10 +11,11 @@ import {
 import type {
   ContactList,
   CampaignSchedule,
+  CallingWindow,
   FeedbackIntent,
   RetryPolicy,
 } from '@/types';
-import { DEFAULT_RETRY_POLICY } from '@/types';
+import { DEFAULT_RETRY_POLICY, DEFAULT_CALLING_WINDOW } from '@/types';
 import { createCampaign } from '@/lib/api';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { useToast } from '@/components/ui/Toast';
@@ -28,6 +29,10 @@ import { FileDropzone } from '@/components/ui/FileDropzone';
 import { Modal } from '@/components/ui/Modal';
 import { CsvMappingPanel } from '@/components/features/CsvMappingPanel';
 import { RetryPolicyEditor } from '@/components/features/RetryPolicyEditor';
+import {
+  CallingWindowEditor,
+  describeCallingWindow,
+} from '@/components/features/CallingWindowEditor';
 import { useCsvUpload, buildColumnMapping } from '@/lib/csvUpload';
 import { formatNumber, formatDateTime } from '@/lib/format';
 import { cn } from '@/lib/cn';
@@ -60,6 +65,9 @@ export default function CreateCampaign() {
   // Section 5 — retry policy
   const [retryPolicy, setRetryPolicy] = useState<RetryPolicy>(DEFAULT_RETRY_POLICY);
 
+  // Section 3.5 — calling window (works alongside the schedule above).
+  const [callingWindow, setCallingWindow] = useState<CallingWindow>(DEFAULT_CALLING_WINDOW);
+
   // Confirmation
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -70,8 +78,13 @@ export default function CreateCampaign() {
     if (phoneColIndex == null) return false;
     if (!validation || validation.validRows === 0) return false;
     if (scheduleType === 'scheduled' && !startsAt) return false;
+    if (callingWindow.enabled) {
+      if (callingWindow.days.length === 0) return false;
+      if (!callingWindow.startTime || !callingWindow.endTime) return false;
+      if (callingWindow.endTime <= callingWindow.startTime) return false;
+    }
     return true;
-  }, [name, csv, phoneColIndex, validation, scheduleType, startsAt]);
+  }, [name, csv, phoneColIndex, validation, scheduleType, startsAt, callingWindow]);
 
   // ── Submit ─────────────────────────────────────────────────────────
   async function submit() {
@@ -110,6 +123,7 @@ export default function CreateCampaign() {
           contactList,
           schedule,
           retryPolicy,
+          callingWindow,
           description: trimmedDescription || undefined,
           feedbackIntents: cleanedIntents.length ? cleanedIntents : undefined,
         },
@@ -224,7 +238,11 @@ export default function CreateCampaign() {
               checked={scheduleType === 'immediate'}
               onChange={() => setScheduleType('immediate')}
               label="Launch immediately"
-              helper="Calls start as soon as the campaign is launched."
+              helper={
+                callingWindow.enabled
+                  ? 'Campaign goes live right after launch. Calls only flow inside the calling window — outside that, they wait until the next opening.'
+                  : 'Calls start as soon as the campaign is launched.'
+              }
             />
             <Radio
               id="scheduled"
@@ -233,7 +251,11 @@ export default function CreateCampaign() {
               checked={scheduleType === 'scheduled'}
               onChange={() => setScheduleType('scheduled')}
               label="Schedule for"
-              helper="Choose a specific date and time."
+              helper={
+                callingWindow.enabled
+                  ? 'Activate at a specific date and time. Calls then respect the calling window below.'
+                  : 'Choose a specific date and time.'
+              }
             />
 
             {scheduleType === 'scheduled' && (
@@ -256,6 +278,13 @@ export default function CreateCampaign() {
             )}
           </div>
         </Section>
+
+        {/* 7.3a CALLING WINDOW */}
+        <CallingWindowEditor
+          value={callingWindow}
+          onChange={setCallingWindow}
+          scheduleType={scheduleType}
+        />
 
         {/* 7.4 FEEDBACK INTENTS */}
         <FeedbackIntentsSection
@@ -323,6 +352,10 @@ export default function CreateCampaign() {
                 ? `${retryPolicy.maxAttempts} attempt${retryPolicy.maxAttempts === 1 ? '' : 's'} · every ${retryPolicy.intervalMinutes < 60 ? `${retryPolicy.intervalMinutes}m` : `${(retryPolicy.intervalMinutes / 60).toFixed(0)}h`}`
                 : 'Off'
             }
+          />
+          <SummaryRow
+            term="Calling window"
+            definition={describeCallingWindow(callingWindow)}
           />
           <SummaryRow
             term="Description"

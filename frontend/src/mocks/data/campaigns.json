@@ -29,11 +29,11 @@
     "metrics": {
       "baseUploaded": 2100,
       "callsInitiated": 1385,
-      "callsConnected": 1112,
-      "callsAnswered": 1040,
-      "callsFailed": 273,
+      "callsConnected": 1102,
+      "callsAnswered": 1015,
+      "callsFailed": 283,
       "avgCallDuration": 40,
-      "totalCost": 2445.39
+      "totalCost": 2415.44
     },
     "description": "Reach customers ahead of their EMI date to lock in payment commitments.",
     "feedbackIntents": [
@@ -54,6 +54,19 @@
         "description": "Customer raised a service complaint that needs follow-up by support."
       }
     ],
+    "callingWindow": {
+      "enabled": true,
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "startTime": "09:00",
+      "endTime": "19:00"
+    },
     "createdBy": "user_001",
     "createdAt": "2026-04-27T09:00:00.000Z",
     "startedAt": "2026-04-28T09:00:00.000Z"
@@ -88,11 +101,11 @@
     "metrics": {
       "baseUploaded": 920,
       "callsInitiated": 590,
-      "callsConnected": 465,
-      "callsAnswered": 435,
-      "callsFailed": 125,
+      "callsConnected": 471,
+      "callsAnswered": 430,
+      "callsFailed": 119,
       "avgCallDuration": 40,
-      "totalCost": 1030.86
+      "totalCost": 1010.03
     },
     "description": "Reach dues-overdue customers and capture a path back to repayment.",
     "feedbackIntents": [
@@ -113,6 +126,19 @@
         "description": "Customer raised a service complaint that needs follow-up by support."
       }
     ],
+    "callingWindow": {
+      "enabled": true,
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "startTime": "09:00",
+      "endTime": "19:00"
+    },
     "createdBy": "user_001",
     "createdAt": "2026-04-25T09:00:00.000Z",
     "startedAt": "2026-04-26T09:00:00.000Z"
@@ -147,11 +173,11 @@
     "metrics": {
       "baseUploaded": 460,
       "callsInitiated": 302,
-      "callsConnected": 240,
-      "callsAnswered": 215,
-      "callsFailed": 62,
-      "avgCallDuration": 39,
-      "totalCost": 525.01
+      "callsConnected": 245,
+      "callsAnswered": 229,
+      "callsFailed": 57,
+      "avgCallDuration": 40,
+      "totalCost": 543.97
     },
     "description": "Reach dues-overdue customers and capture a path back to repayment.",
     "feedbackIntents": [
@@ -172,6 +198,19 @@
         "description": "Customer raised a service complaint that needs follow-up by support."
       }
     ],
+    "callingWindow": {
+      "enabled": true,
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "startTime": "09:00",
+      "endTime": "19:00"
+    },
     "createdBy": "user_001",
     "createdAt": "2026-04-26T09:00:00.000Z",
     "startedAt": "2026-04-27T09:00:00.000Z"
@@ -206,11 +245,11 @@
     "metrics": {
       "baseUploaded": 670,
       "callsInitiated": 378,
-      "callsConnected": 315,
-      "callsAnswered": 288,
-      "callsFailed": 63,
-      "avgCallDuration": 39,
-      "totalCost": 677.4
+      "callsConnected": 304,
+      "callsAnswered": 283,
+      "callsFailed": 74,
+      "avgCallDuration": 40,
+      "totalCost": 664.88
     },
     "description": "Drive eKYC completion live on the call so disbursals can move forward.",
     "feedbackIntents": [
@@ -231,6 +270,18 @@
         "description": "Customer asked to be contacted again at a more convenient time."
       }
     ],
+    "callingWindow": {
+      "enabled": true,
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "startTime": "10:00",
+      "endTime": "18:00"
+    },
     "createdBy": "user_001",
     "createdAt": "2026-04-26T09:00:00.000Z",
     "startedAt": "2026-04-27T09:00:00.000Z"
@@ -265,11 +316,11 @@
     "metrics": {
       "baseUploaded": 340,
       "callsInitiated": 279,
-      "callsConnected": 222,
-      "callsAnswered": 199,
-      "callsFailed": 57,
-      "avgCallDuration": 39,
-      "totalCost": 475.6
+      "callsConnected": 216,
+      "callsAnswered": 201,
+      "callsFailed": 63,
+      "avgCallDuration": 40,
+      "totalCost": 478.51
     },
     "description": "Reach customers ahead of their EMI date to lock in payment commitments.",
     "feedbackIntents": [
@@ -290,6 +341,19 @@
         "description": "Customer raised a service complaint that needs follow-up by support."
       }
     ],
+    "callingWindow": {
+      "enabled": true,
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "startTime": "09:00",
+      "endTime": "19:00"
+    },
     "createdBy": "user_001",
     "createdAt": "2026-04-18T09:00:00.000Z",
     "startedAt": "2026-04-19T09:00:00.000Z"
@@ -324,11 +388,11 @@
     "metrics": {
       "baseUploaded": 2090,
       "callsInitiated": 2090,
-      "callsConnected": 1664,
-      "callsAnswered": 1546,
-      "callsFailed": 426,
+      "callsConnected": 1688,
+      "callsAnswered": 1572,
+      "callsFailed": 402,
       "avgCallDuration": 40,
-      "totalCost": 3631.92
+      "totalCost": 3708.63
     },
     "description": "Reach customers ahead of their EMI date to lock in payment commitments.",
     "feedbackIntents": [
@@ -349,6 +413,19 @@
         "description": "Customer raised a service complaint that needs follow-up by support."
       }
     ],
+    "callingWindow": {
+      "enabled": true,
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "startTime": "09:00",
+      "endTime": "19:00"
+    },
     "createdBy": "user_001",
     "createdAt": "2026-02-20T09:00:00.000Z",
     "startedAt": "2026-02-22T09:00:00.000Z",
@@ -384,11 +461,11 @@
     "metrics": {
       "baseUploaded": 1975,
       "callsInitiated": 1975,
-      "callsConnected": 1589,
-      "callsAnswered": 1472,
-      "callsFailed": 386,
+      "callsConnected": 1565,
+      "callsAnswered": 1451,
+      "callsFailed": 410,
       "avgCallDuration": 40,
-      "totalCost": 3478.41
+      "totalCost": 3444.31
     },
     "description": "Reach customers ahead of their EMI date to lock in payment commitments.",
     "feedbackIntents": [
@@ -409,6 +486,19 @@
         "description": "Customer raised a service complaint that needs follow-up by support."
       }
     ],
+    "callingWindow": {
+      "enabled": true,
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "startTime": "09:00",
+      "endTime": "19:00"
+    },
     "createdBy": "user_001",
     "createdAt": "2026-02-17T09:00:00.000Z",
     "startedAt": "2026-02-19T09:00:00.000Z",
@@ -444,11 +534,11 @@
     "metrics": {
       "baseUploaded": 1115,
       "callsInitiated": 1115,
-      "callsConnected": 870,
-      "callsAnswered": 807,
-      "callsFailed": 245,
+      "callsConnected": 889,
+      "callsAnswered": 815,
+      "callsFailed": 226,
       "avgCallDuration": 40,
-      "totalCost": 1920.91
+      "totalCost": 1904.66
     },
     "description": "Reach dues-overdue customers and capture a path back to repayment.",
     "feedbackIntents": [
@@ -469,6 +559,19 @@
         "description": "Customer raised a service complaint that needs follow-up by support."
       }
     ],
+    "callingWindow": {
+      "enabled": true,
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "startTime": "09:00",
+      "endTime": "19:00"
+    },
     "createdBy": "user_001",
     "createdAt": "2026-02-05T09:00:00.000Z",
     "startedAt": "2026-02-07T09:00:00.000Z",
@@ -504,13 +607,26 @@
     "metrics": {
       "baseUploaded": 810,
       "callsInitiated": 810,
-      "callsConnected": 662,
-      "callsAnswered": 616,
-      "callsFailed": 148,
+      "callsConnected": 646,
+      "callsAnswered": 601,
+      "callsFailed": 164,
       "avgCallDuration": 40,
-      "totalCost": 1443.82
+      "totalCost": 1414.07
     },
     "description": "Reach pending applicants and close out outstanding documentation.",
+    "callingWindow": {
+      "enabled": true,
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "startTime": "09:00",
+      "endTime": "19:00"
+    },
     "createdBy": "user_001",
     "createdAt": "2026-02-11T09:00:00.000Z",
     "startedAt": "2026-02-13T09:00:00.000Z",
@@ -546,11 +662,11 @@
     "metrics": {
       "baseUploaded": 740,
       "callsInitiated": 740,
-      "callsConnected": 600,
-      "callsAnswered": 560,
-      "callsFailed": 140,
-      "avgCallDuration": 40,
-      "totalCost": 1313.51
+      "callsConnected": 585,
+      "callsAnswered": 551,
+      "callsFailed": 155,
+      "avgCallDuration": 41,
+      "totalCost": 1295.63
     },
     "description": "Drive eKYC completion live on the call so disbursals can move forward.",
     "feedbackIntents": [
@@ -571,6 +687,18 @@
         "description": "Customer asked to be contacted again at a more convenient time."
       }
     ],
+    "callingWindow": {
+      "enabled": true,
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "startTime": "10:00",
+      "endTime": "18:00"
+    },
     "createdBy": "user_001",
     "createdAt": "2026-02-20T09:00:00.000Z",
     "startedAt": "2026-02-22T09:00:00.000Z",
@@ -606,11 +734,11 @@
     "metrics": {
       "baseUploaded": 380,
       "callsInitiated": 380,
-      "callsConnected": 299,
-      "callsAnswered": 281,
-      "callsFailed": 81,
-      "avgCallDuration": 40,
-      "totalCost": 656.42
+      "callsConnected": 308,
+      "callsAnswered": 279,
+      "callsFailed": 72,
+      "avgCallDuration": 39,
+      "totalCost": 664.73
     },
     "description": "Drive eKYC completion live on the call so disbursals can move forward.",
     "feedbackIntents": [
@@ -631,6 +759,18 @@
         "description": "Customer asked to be contacted again at a more convenient time."
       }
     ],
+    "callingWindow": {
+      "enabled": true,
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "startTime": "10:00",
+      "endTime": "18:00"
+    },
     "createdBy": "user_001",
     "createdAt": "2026-02-19T09:00:00.000Z",
     "startedAt": "2026-02-21T09:00:00.000Z",
@@ -666,13 +806,26 @@
     "metrics": {
       "baseUploaded": 270,
       "callsInitiated": 270,
-      "callsConnected": 213,
+      "callsConnected": 215,
       "callsAnswered": 198,
-      "callsFailed": 57,
+      "callsFailed": 55,
       "avgCallDuration": 40,
-      "totalCost": 472.59
+      "totalCost": 462.97
     },
     "description": "Reach dues-overdue customers and capture a path back to repayment.",
+    "callingWindow": {
+      "enabled": true,
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "startTime": "09:00",
+      "endTime": "19:00"
+    },
     "createdBy": "user_001",
     "createdAt": "2026-02-10T09:00:00.000Z",
     "startedAt": "2026-02-12T09:00:00.000Z",
@@ -708,11 +861,11 @@
     "metrics": {
       "baseUploaded": 440,
       "callsInitiated": 440,
-      "callsConnected": 349,
-      "callsAnswered": 324,
-      "callsFailed": 91,
+      "callsConnected": 361,
+      "callsAnswered": 330,
+      "callsFailed": 79,
       "avgCallDuration": 40,
-      "totalCost": 763.79
+      "totalCost": 789.48
     },
     "description": "Surface qualified leads who are ready to apply for a follow-up offer.",
     "feedbackIntents": [
@@ -733,6 +886,19 @@
         "description": "Customer explicitly declined the offer or product."
       }
     ],
+    "callingWindow": {
+      "enabled": true,
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "startTime": "10:00",
+      "endTime": "20:00"
+    },
     "createdBy": "user_001",
     "createdAt": "2026-02-03T09:00:00.000Z",
     "startedAt": "2026-02-05T09:00:00.000Z",
@@ -768,11 +934,11 @@
     "metrics": {
       "baseUploaded": 310,
       "callsInitiated": 310,
-      "callsConnected": 248,
-      "callsAnswered": 234,
-      "callsFailed": 62,
-      "avgCallDuration": 41,
-      "totalCost": 540.59
+      "callsConnected": 250,
+      "callsAnswered": 232,
+      "callsFailed": 60,
+      "avgCallDuration": 40,
+      "totalCost": 546.94
     },
     "description": "Chase pending documents from customers mid-application.",
     "feedbackIntents": [
@@ -785,6 +951,19 @@
         "description": "Customer asked to be contacted again at a more convenient time."
       }
     ],
+    "callingWindow": {
+      "enabled": true,
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "startTime": "09:00",
+      "endTime": "19:00"
+    },
     "createdBy": "user_001",
     "createdAt": "2026-01-29T09:00:00.000Z",
     "startedAt": "2026-01-31T09:00:00.000Z",
@@ -820,13 +999,26 @@
     "metrics": {
       "baseUploaded": 560,
       "callsInitiated": 560,
-      "callsConnected": 434,
-      "callsAnswered": 400,
-      "callsFailed": 126,
+      "callsConnected": 454,
+      "callsAnswered": 416,
+      "callsFailed": 106,
       "avgCallDuration": 40,
-      "totalCost": 945.63
+      "totalCost": 990.6
     },
     "description": "Reach customers ahead of their EMI date to lock in payment commitments.",
+    "callingWindow": {
+      "enabled": true,
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "startTime": "09:00",
+      "endTime": "19:00"
+    },
     "createdBy": "user_001",
     "createdAt": "2026-02-10T09:00:00.000Z",
     "startedAt": "2026-02-12T09:00:00.000Z",
@@ -862,11 +1054,11 @@
     "metrics": {
       "baseUploaded": 725,
       "callsInitiated": 725,
-      "callsConnected": 577,
-      "callsAnswered": 547,
-      "callsFailed": 148,
-      "avgCallDuration": 41,
-      "totalCost": 1283.37
+      "callsConnected": 581,
+      "callsAnswered": 535,
+      "callsFailed": 144,
+      "avgCallDuration": 40,
+      "totalCost": 1267.74
     },
     "description": "Surface qualified leads who are ready to apply for a follow-up offer.",
     "feedbackIntents": [
@@ -887,6 +1079,19 @@
         "description": "Customer explicitly declined the offer or product."
       }
     ],
+    "callingWindow": {
+      "enabled": true,
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "startTime": "10:00",
+      "endTime": "20:00"
+    },
     "createdBy": "user_001",
     "createdAt": "2026-02-20T09:00:00.000Z",
     "startedAt": "2026-02-22T09:00:00.000Z",
@@ -922,13 +1127,25 @@
     "metrics": {
       "baseUploaded": 360,
       "callsInitiated": 360,
-      "callsConnected": 299,
-      "callsAnswered": 284,
-      "callsFailed": 61,
-      "avgCallDuration": 41,
-      "totalCost": 655.92
+      "callsConnected": 286,
+      "callsAnswered": 261,
+      "callsFailed": 74,
+      "avgCallDuration": 40,
+      "totalCost": 607.88
     },
     "description": "Onboard freshly-disbursed customers with a friendly welcome call.",
+    "callingWindow": {
+      "enabled": true,
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "startTime": "10:00",
+      "endTime": "18:00"
+    },
     "createdBy": "user_001",
     "createdAt": "2026-02-22T09:00:00.000Z",
     "startedAt": "2026-02-24T09:00:00.000Z",
@@ -964,11 +1181,11 @@
     "metrics": {
       "baseUploaded": 405,
       "callsInitiated": 405,
-      "callsConnected": 328,
-      "callsAnswered": 304,
-      "callsFailed": 77,
-      "avgCallDuration": 40,
-      "totalCost": 709.34
+      "callsConnected": 329,
+      "callsAnswered": 306,
+      "callsFailed": 76,
+      "avgCallDuration": 41,
+      "totalCost": 714.89
     },
     "description": "Onboard freshly-disbursed customers with a friendly welcome call.",
     "feedbackIntents": [
@@ -989,6 +1206,18 @@
         "description": "Customer explicitly declined the offer or product."
       }
     ],
+    "callingWindow": {
+      "enabled": true,
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "startTime": "10:00",
+      "endTime": "18:00"
+    },
     "createdBy": "user_001",
     "createdAt": "2026-01-28T09:00:00.000Z",
     "startedAt": "2026-01-30T09:00:00.000Z",
@@ -1024,11 +1253,11 @@
     "metrics": {
       "baseUploaded": 1200,
       "callsInitiated": 1200,
-      "callsConnected": 951,
-      "callsAnswered": 875,
-      "callsFailed": 249,
+      "callsConnected": 969,
+      "callsAnswered": 895,
+      "callsFailed": 231,
       "avgCallDuration": 40,
-      "totalCost": 2080.93
+      "totalCost": 2110.28
     },
     "description": "Surface qualified leads who are ready to apply for a follow-up offer.",
     "feedbackIntents": [
@@ -1049,6 +1278,19 @@
         "description": "Customer explicitly declined the offer or product."
       }
     ],
+    "callingWindow": {
+      "enabled": true,
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "startTime": "10:00",
+      "endTime": "20:00"
+    },
     "createdBy": "user_001",
     "createdAt": "2026-02-13T09:00:00.000Z",
     "startedAt": "2026-02-15T09:00:00.000Z",
@@ -1084,13 +1326,26 @@
     "metrics": {
       "baseUploaded": 190,
       "callsInitiated": 190,
-      "callsConnected": 165,
-      "callsAnswered": 154,
-      "callsFailed": 25,
-      "avgCallDuration": 40,
-      "totalCost": 353.45
+      "callsConnected": 160,
+      "callsAnswered": 145,
+      "callsFailed": 30,
+      "avgCallDuration": 39,
+      "totalCost": 349.52
     },
     "description": "Reach dues-overdue customers and capture a path back to repayment.",
+    "callingWindow": {
+      "enabled": true,
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "startTime": "09:00",
+      "endTime": "19:00"
+    },
     "createdBy": "user_001",
     "createdAt": "2026-02-07T09:00:00.000Z",
     "startedAt": "2026-02-09T09:00:00.000Z",
@@ -1134,6 +1389,19 @@
       "totalCost": 0
     },
     "description": "Reach customers ahead of their EMI date to lock in payment commitments.",
+    "callingWindow": {
+      "enabled": true,
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "startTime": "09:00",
+      "endTime": "19:00"
+    },
     "createdBy": "user_001",
     "createdAt": "2026-04-27T09:00:00.000Z"
   },
@@ -1175,6 +1443,18 @@
       "totalCost": 0
     },
     "description": "Drive eKYC completion live on the call so disbursals can move forward.",
+    "callingWindow": {
+      "enabled": true,
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "startTime": "10:00",
+      "endTime": "18:00"
+    },
     "createdBy": "user_001",
     "createdAt": "2026-04-25T09:00:00.000Z"
   },
@@ -1216,6 +1496,19 @@
       "totalCost": 0
     },
     "description": "Surface qualified leads who are ready to apply for a follow-up offer.",
+    "callingWindow": {
+      "enabled": true,
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "startTime": "10:00",
+      "endTime": "20:00"
+    },
     "createdBy": "user_001",
     "createdAt": "2026-04-26T09:00:00.000Z"
   },
@@ -1256,6 +1549,19 @@
       "totalCost": 0
     },
     "description": "Reach customers ahead of their EMI date to lock in payment commitments.",
+    "callingWindow": {
+      "enabled": true,
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "startTime": "09:00",
+      "endTime": "19:00"
+    },
     "createdBy": "user_001",
     "createdAt": "2026-04-29T09:00:00.000Z"
   },
@@ -1296,6 +1602,19 @@
       "totalCost": 0
     },
     "description": "Resolve customer queries on this segment and capture next steps.",
+    "callingWindow": {
+      "enabled": true,
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "startTime": "09:00",
+      "endTime": "19:00"
+    },
     "createdBy": "user_001",
     "createdAt": "2026-04-30T09:00:00.000Z"
   }

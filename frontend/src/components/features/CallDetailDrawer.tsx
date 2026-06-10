@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import {
   X,
-  Download,
   PhoneIncoming,
   PhoneMissed,
   PhoneOff,
@@ -10,13 +9,12 @@ import {
 import type { CallSummary, CallDetail, Workspace } from '@/types';
 import { Drawer } from '@/components/ui/Drawer';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { CallStatusBadge } from './StatusBadge';
 import { AudioPlayer } from './AudioPlayer';
 import { TranscriptView } from './TranscriptView';
-import { useToast } from '@/components/ui/Toast';
 import { getCallDetail } from '@/lib/api';
+import { intentLabel } from '@/lib/labels';
 import {
   formatDateTime,
   formatDuration,
@@ -43,7 +41,6 @@ export function CallDetailDrawer({
   const [detail, setDetail] = useState<CallDetail | null | undefined>(undefined); // undefined = loading
   const [currentMs, setCurrentMs] = useState(0);
   const [playing, setPlaying] = useState(false);
-  const toast = useToast();
 
   // Reset whenever a new call is opened.
   useEffect(() => {
@@ -149,6 +146,39 @@ export function CallDetailDrawer({
             </div>
           ) : null}
 
+          {/* Insights — sentiment, primary intent, plus each entry from the
+              call's custom_intents map rendered as its own labeled field.
+              Hidden when the call has no insights yet (e.g. in_progress /
+              failed). */}
+          {detail === undefined ? (
+            <InsightsSkeleton />
+          ) : detail?.insights ? (
+            <div className="rounded-lg border border-border-subtle bg-surface p-4 space-y-4">
+              <h3 className="text-xs font-semibold uppercase tracking-[0.06em] text-text-tertiary">
+                Insights
+              </h3>
+
+              <div className="grid grid-cols-2 gap-x-4 gap-y-4">
+                <InsightField label="Call sentiment">
+                  <SentimentChip sentiment={detail.insights.sentiment} />
+                </InsightField>
+                <InsightField label="Call intent">
+                  <Badge tone="brand">
+                    {intentLabel(detail.insights.primaryIntent)}
+                  </Badge>
+                </InsightField>
+
+                {Object.entries(detail.insights.customIntents ?? {}).map(([key, value]) => (
+                  <InsightField key={key} label={humanizeKey(key)}>
+                    <Badge tone="info" className="whitespace-normal max-w-full">
+                      {value}
+                    </Badge>
+                  </InsightField>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
           {/* Transcript */}
           <div>
             <div className="flex items-center justify-between mb-3">
@@ -181,21 +211,6 @@ export function CallDetailDrawer({
         </div>
       </div>
 
-      {/* Footer */}
-      <footer className="px-5 py-3 border-t border-border-subtle bg-slate-25 flex items-center gap-2 shrink-0">
-        {detail?.notes && (
-          <Badge tone="info">Has notes</Badge>
-        )}
-        <span className="flex-1" />
-        <Button
-          variant="ghost"
-          size="sm"
-          leftIcon={<Download size={14} />}
-          onClick={() => toast.success('Export started', `Call ${call.id.slice(-6)}`)}
-        >
-          Export
-        </Button>
-      </footer>
     </Drawer>
   );
 }
@@ -219,4 +234,60 @@ function SummarySkeleton() {
     </div>
   );
 }
+
+function InsightsSkeleton() {
+  return (
+    <div className="rounded-lg border border-border-subtle bg-surface p-4 space-y-4">
+      <Skeleton className="h-3 w-16" />
+      <div className="grid grid-cols-2 gap-x-4 gap-y-4">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i}>
+            <Skeleton className="h-2.5 w-24 mb-2" />
+            <Skeleton className="h-6 w-28 rounded-full" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function InsightField({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="min-w-0">
+      <div className="text-[11px] text-text-tertiary mb-1.5">{label}</div>
+      {children}
+    </div>
+  );
+}
+
+/**
+ * Humanizes a snake_case custom-intent key into a display label:
+ *   social_media_mention → "Social media mention"
+ *   drop_off_reason      → "Drop off reason"
+ */
+function humanizeKey(key: string): string {
+  if (!key) return '';
+  const spaced = key.replace(/_+/g, ' ').trim();
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+}
+
+function SentimentChip({
+  sentiment,
+}: {
+  sentiment: 'positive' | 'neutral' | 'negative';
+}) {
+  const tone =
+    sentiment === 'positive' ? 'success' :
+    sentiment === 'negative' ? 'danger' :
+                                'neutral';
+  const label = sentiment.charAt(0).toUpperCase() + sentiment.slice(1);
+  return <Badge tone={tone}>{label}</Badge>;
+}
+
 
